@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     "Liga de Fútbol de Ex Alumnos Ignacianos. Resultados, tabla, equipos e historial del torneo Junior Apertura 2026.",
   icons: {
-    icon: "/img/logo-lifexi.webp",
+    icon: "/img/logo-lifexi.png",
   },
 };
 
