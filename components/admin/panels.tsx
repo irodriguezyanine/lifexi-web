@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   addFixture,
   saveHistoryEntry,
@@ -10,13 +10,16 @@ import {
   saveSeason,
   saveSiteContent,
   saveTeam,
-  saveTournament,
 } from "@/app/admin/actions";
+import { ensureChampionPhotos } from "@/app/admin/champion-dossier-action";
+import { ChampionCreateDialog, ChampionDossierModal } from "@/components/admin/champion-dossier";
 import { PlayerCreateDialog, PlayerDossierModal } from "@/components/admin/player-dossier";
 import { IconPlus } from "@/components/admin/icons";
 import { TeamDossierModal } from "@/components/admin/team-dossier";
 import { bindPlayerRow, bindRow, useAdminData } from "@/components/admin/store";
-import type { TeamRow } from "@/lib/admin/types";
+import { kindLabel } from "@/lib/admin/champion-fotos";
+import type { ChampionKind, ChampionTeamOpt, TeamRow } from "@/lib/admin/types";
+import "@/app/admin/champion-dossier.css";
 
 function teamName(teams: { id: number; name: string }[], id: number) {
   return teams.find((t) => t.id === id)?.name ?? `#${id}`;
@@ -804,11 +807,15 @@ export function FairPlayPanel() {
 
 export function ChampionsPanel() {
   const { data, loading, error, reload } = useAdminData();
-  const [label, setLabel] = useState("");
-  const [kind, setKind] = useState("oficial");
-  const [champ, setChamp] = useState("");
-  const [sub, setSub] = useState("");
-  const [pending, start] = useTransition();
+  const [q, setQ] = useState("");
+  const [kind, setKind] = useState("all");
+  const [creating, setCreating] = useState(false);
+  const [openId, setOpenId] = useState<number | null>(null);
+  useEffect(() => {
+    void ensureChampionPhotos().then((res) => {
+      if (res.ok && (res.data?.inserted ?? 0) > 0) void reload();
+    });
+  }, [reload]);
   if (loading) return <p className="adm-load">Cargando…</p>;
   if (error || !data) return <p className="adm-alert">{error ?? "Sin datos"}</p>;
   const rows = data.tournaments as {
@@ -818,19 +825,43 @@ export function ChampionsPanel() {
     kind: string;
     champion_team_id: number | null;
     runner_up_team_id: number | null;
-    venue: string | null;
-    notes: string | null;
-    runner_up_asterisk: boolean;
-    disqualified_team_id: number | null;
-    counts_as_final: boolean;
+    unofficial_winner_name?: string | null;
   }[];
+  const thumbs = new Map(
+    (data.media as { kind: string; object_path: string; historical_tournament_id: number | null; sort_key: string | null }[])
+      .filter((row) => row.historical_tournament_id && (row.kind === "champion_thumb" || row.kind === "champion_photo"))
+      .sort((a, b) => (a.sort_key ?? "5").localeCompare(b.sort_key ?? "5"))
+      .map((row) => [row.historical_tournament_id as number, mediaSrc(row.object_path)]),
+  );
+  const shown = rows.filter((r) => {
+    if (kind !== "all" && r.kind !== kind) return false;
+    if (!q) return true;
+    const hay = `${r.label} ${r.official_number ?? ""} ${r.champion_team_id ? teamName(data.teams, r.champion_team_id) : ""} ${r.runner_up_team_id ? teamName(data.teams, r.runner_up_team_id) : ""} ${r.unofficial_winner_name ?? ""}`.toLowerCase();
+    return hay.includes(q.toLowerCase());
+  });
+  const ids = shown.map((r) => r.id);
+  const teams = data.teams as ChampionTeamOpt[];
   return (
     <>
-      <Header title="Campeones" note="Historial Junior, palmarés y finales se derivan de acá." />
-      <section className="adm-card" style={{ overflow: "auto", maxHeight: "52vh" }}>
+      <Header title="Campeones" note={`${rows.length} torneos`} />
+      <div className="adm-toolbar">
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" aria-label="Buscar" style={{ maxWidth: 240 }} />
+        <select value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Tipo" style={{ maxWidth: 180 }}>
+          <option value="all">Todos</option>
+          <option value="oficial">Oficial</option>
+          <option value="nooficial">No oficial</option>
+          <option value="suspendido">Suspendido</option>
+          <option value="encurso">En curso</option>
+        </select>
+        <button className="pd-plus" type="button" title="Nuevo" aria-label="Nuevo" onClick={() => setCreating(true)}>
+          <IconPlus />
+        </button>
+      </div>
+      <section className="adm-card" style={{ overflow: "auto", maxHeight: "70vh" }}>
         <table className="adm-table">
           <thead>
             <tr>
+              <th></th>
               <th>Nº</th>
               <th>Torneo</th>
               <th>Campeón</th>
@@ -838,96 +869,54 @@ export function ChampionsPanel() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr
-                key={r.id}
-                {...bindRow(
-                  () => {
-                    setLabel(r.label);
-                    setKind(r.kind);
-                    setChamp(r.champion_team_id ? String(r.champion_team_id) : "");
-                    setSub(r.runner_up_team_id ? String(r.runner_up_team_id) : "");
-                  },
-                  { selected: label === r.label, label: r.label },
-                )}
-              >
-                <td>{r.official_number ?? "—"}</td>
-                <td>{r.label}</td>
-                <td>{r.champion_team_id ? teamName(data.teams, r.champion_team_id) : "—"}</td>
-                <td>{r.runner_up_team_id ? teamName(data.teams, r.runner_up_team_id) : "—"}</td>
-              </tr>
-            ))}
+            {shown.map((r) => {
+              const pic = thumbs.get(r.id);
+              const champ = r.champion_team_id ? teamName(data.teams, r.champion_team_id) : r.unofficial_winner_name || "—";
+              return (
+                <tr
+                  key={r.id}
+                  {...bindRow(() => setOpenId(r.id), { selected: openId === r.id, label: r.label })}
+                >
+                  <td>{pic ? <img className="ch-row-pic" src={pic} alt="" /> : null}</td>
+                  <td>{r.official_number ?? "—"}</td>
+                  <td>
+                    {r.label}
+                    {r.kind !== "oficial" ? (
+                      <>
+                        {" "}
+                        <span className={`pd-chip${r.kind === "encurso" ? " now" : ""}`}>{kindLabel(r.kind as ChampionKind)}</span>
+                      </>
+                    ) : null}
+                  </td>
+                  <td>{champ}</td>
+                  <td>{r.runner_up_team_id ? teamName(data.teams, r.runner_up_team_id) : "—"}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </section>
-      <section className="adm-card" style={{ marginTop: "0.85rem" }}>
-        <h2>Alta / edición por etiqueta</h2>
-        <div className="adm-form three">
-          <label>
-            Torneo
-            <input value={label} onChange={(e) => setLabel(e.target.value)} />
-          </label>
-          <label>
-            Tipo
-            <select value={kind} onChange={(e) => setKind(e.target.value)}>
-              <option value="oficial">oficial</option>
-              <option value="suspendido">suspendido</option>
-              <option value="nooficial">nooficial</option>
-              <option value="encurso">encurso</option>
-            </select>
-          </label>
-          <label>
-            Campeón
-            <select value={champ} onChange={(e) => setChamp(e.target.value)}>
-              <option value="">—</option>
-              {data.teams.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Subcampeón
-            <select value={sub} onChange={(e) => setSub(e.target.value)}>
-              <option value="">—</option>
-              {data.teams.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <div className="adm-actions">
-          <button
-            className="adm-btn"
-            type="button"
-            disabled={pending}
-            onClick={() =>
-              start(async () => {
-                const existing = rows.find((r) => r.label === label);
-                await saveTournament({
-                  id: existing?.id,
-                  official_number: existing?.official_number ?? null,
-                  label,
-                  venue: existing?.venue ?? null,
-                  notes: existing?.notes ?? null,
-                  kind,
-                  champion_team_id: champ ? Number(champ) : null,
-                  runner_up_team_id: sub ? Number(sub) : null,
-                  runner_up_asterisk: existing?.runner_up_asterisk ?? false,
-                  disqualified_team_id: existing?.disqualified_team_id ?? null,
-                  counts_as_final: kind === "oficial",
-                });
-                void reload();
-              })
-            }
-          >
-            Guardar torneo
-          </button>
-        </div>
-      </section>
+      {creating ? (
+        <ChampionCreateDialog
+          teams={teams}
+          tournaments={rows}
+          onClose={() => setCreating(false)}
+          onCreated={(id) => {
+            setCreating(false);
+            void reload();
+            setOpenId(id);
+          }}
+        />
+      ) : null}
+      {openId != null ? (
+        <ChampionDossierModal
+          tournamentId={openId}
+          listIds={ids}
+          onClose={() => setOpenId(null)}
+          onOpen={setOpenId}
+          onSaved={() => void reload()}
+        />
+      ) : null}
     </>
   );
 }
@@ -983,77 +972,98 @@ export function HistoryPanel() {
   );
 }
 
+const HOME_OCULTOS = new Set(["sanctions_ledger", "team_profiles", "player_profiles"]);
+const HOME_GRUPOS = ["Home", "Pestañas", "Pie", "Otros"] as const;
+const HOME_META: Record<string, { grupo: (typeof HOME_GRUPOS)[number]; etiqueta: string; titulo: string; cuerpo?: string }> = {
+  construction_banner: { grupo: "Home", etiqueta: "Aviso", titulo: "Texto del aviso" },
+  home_subtitle: { grupo: "Home", etiqueta: "Encabezado", titulo: "Subtítulo bajo LIFEXI", cuerpo: "Línea de la portada" },
+  tab_fechas: { grupo: "Pestañas", etiqueta: "Fechas", titulo: "Nombre" },
+  tab_equipos: { grupo: "Pestañas", etiqueta: "Equipos", titulo: "Nombre" },
+  tab_lideres: { grupo: "Pestañas", etiqueta: "Goleadores y tarjetas", titulo: "Nombre" },
+  tab_fair: { grupo: "Pestañas", etiqueta: "Fair Play", titulo: "Nombre" },
+  tab_sim: { grupo: "Pestañas", etiqueta: "Simulador", titulo: "Nombre" },
+  tab_camp: { grupo: "Pestañas", etiqueta: "Campeones", titulo: "Nombre" },
+  tab_hist: { grupo: "Pestañas", etiqueta: "Historia", titulo: "Nombre" },
+  footer_source: { grupo: "Pie", etiqueta: "Fuente", titulo: "Título", cuerpo: "Texto" },
+  footer_table_rules: { grupo: "Pie", etiqueta: "Reglas de tabla", titulo: "Título", cuerpo: "Texto" },
+  footer_fair_play: { grupo: "Pie", etiqueta: "Reglas Fair Play", titulo: "Título", cuerpo: "Texto" },
+  sanctions_note: { grupo: "Pie", etiqueta: "Nota de sanciones", titulo: "Título", cuerpo: "Texto" },
+};
+
 export function HomePanel() {
   const { data, loading, error, reload } = useAdminData();
   const [pending, start] = useTransition();
   if (loading) return <p className="adm-load">Cargando…</p>;
   if (error || !data) return <p className="adm-alert">{error ?? "Sin datos"}</p>;
   const rows = (data.content as { id: number; slug: string; area: string; title: string | null; body: string | null; is_visible: boolean }[]).filter(
-    (r) => r.slug !== "sanctions_ledger",
+    (r) => !HOME_OCULTOS.has(r.slug),
   );
+  function saveRow(
+    r: { id: number; title: string | null; body: string | null; is_visible: boolean },
+    patch: Partial<{ title: string | null; body: string | null; is_visible: boolean }>,
+  ) {
+    start(async () => {
+      await saveSiteContent({
+        id: r.id,
+        title: patch.title !== undefined ? patch.title : r.title,
+        body: patch.body !== undefined ? patch.body : r.body,
+        is_visible: patch.is_visible !== undefined ? patch.is_visible : r.is_visible,
+      });
+      void reload();
+    });
+  }
   return (
     <>
-      <Header title="Portada" note="Textos, pestañas y avisos del home." />
-      {rows.map((r) => (
-        <section className="adm-card" key={r.id} style={{ marginBottom: "0.7rem" }}>
-          <div className="adm-form two">
-            <label>
-              {r.slug}
-              <input
-                defaultValue={r.title ?? ""}
-                onBlur={(e) =>
-                  start(async () => {
-                    await saveSiteContent({
-                      id: r.id,
-                      title: e.target.value,
-                      body: r.body,
-                      is_visible: r.is_visible,
-                    });
-                    void reload();
-                  })
-                }
-              />
-            </label>
-            <label>
-              Visible
-              <select
-                defaultValue={r.is_visible ? "1" : "0"}
-                onChange={(e) =>
-                  start(async () => {
-                    await saveSiteContent({
-                      id: r.id,
-                      title: r.title,
-                      body: r.body,
-                      is_visible: e.target.value === "1",
-                    });
-                    void reload();
-                  })
-                }
-              >
-                <option value="1">Sí</option>
-                <option value="0">No</option>
-              </select>
-            </label>
-            <label>
-              Texto
-              <textarea
-                defaultValue={r.body ?? ""}
-                onBlur={(e) =>
-                  start(async () => {
-                    await saveSiteContent({
-                      id: r.id,
-                      title: r.title,
-                      body: e.target.value,
-                      is_visible: r.is_visible,
-                    });
-                    void reload();
-                  })
-                }
-              />
-            </label>
+      <Header title="Portada" note="La próxima fecha del torneo se arma sola. Acá se editan aviso, subtítulo, pestañas y pie." />
+      {HOME_GRUPOS.map((grupo) => {
+        const items = rows.filter((r) => (HOME_META[r.slug]?.grupo ?? "Otros") === grupo);
+        if (!items.length) return null;
+        return (
+          <div key={grupo} style={{ marginBottom: "1.1rem" }}>
+            <p className="adm-kicker" style={{ margin: "0 0 0.45rem", color: "var(--muted, #8aa)", fontSize: "0.78rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              {grupo}
+            </p>
+            {items.map((r) => {
+              const meta = HOME_META[r.slug] ?? { grupo: "Otros" as const, etiqueta: r.slug, titulo: "Título", cuerpo: "Texto" };
+              return (
+                <section className="adm-card" key={r.id} style={{ marginBottom: "0.7rem" }}>
+                  <div className="adm-form two">
+                    <label>
+                      {meta.etiqueta}
+                      <input
+                        defaultValue={r.title ?? ""}
+                        disabled={pending}
+                        onBlur={(e) => saveRow(r, { title: e.target.value })}
+                      />
+                    </label>
+                    <label>
+                      Visible
+                      <select
+                        defaultValue={r.is_visible ? "1" : "0"}
+                        disabled={pending}
+                        onChange={(e) => saveRow(r, { is_visible: e.target.value === "1" })}
+                      >
+                        <option value="1">Sí</option>
+                        <option value="0">No</option>
+                      </select>
+                    </label>
+                    {meta.cuerpo ? (
+                      <label>
+                        {meta.cuerpo}
+                        <textarea
+                          defaultValue={r.body ?? ""}
+                          disabled={pending}
+                          onBlur={(e) => saveRow(r, { body: e.target.value })}
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+                </section>
+              );
+            })}
           </div>
-        </section>
-      ))}
+        );
+      })}
     </>
   );
 }

@@ -833,6 +833,8 @@ export async function saveHistoryEntry(input: {
   return { ok: true };
 }
 
+const TOURNAMENT_KINDS = ["oficial", "nooficial", "suspendido", "encurso"] as const;
+
 export async function saveTournament(input: {
   id?: number;
   official_number: number | null;
@@ -845,45 +847,90 @@ export async function saveTournament(input: {
   runner_up_asterisk: boolean;
   disqualified_team_id: number | null;
   counts_as_final: boolean;
-}): Promise<ActionResult> {
+  pitch_result?: string | null;
+  unofficial_winner_name?: string | null;
+  photo_note?: string | null;
+}): Promise<ActionResult<{ id: number }>> {
   const who = await actor();
   if (!who) return fail("Sesión vencida");
+  const label = input.label.trim().replace(/\s+/g, " ").slice(0, 64);
+  if (!label) return fail("Falta el torneo");
+  if (!TOURNAMENT_KINDS.includes(input.kind as (typeof TOURNAMENT_KINDS)[number])) return fail("Tipo inválido");
+  const kind = input.kind as (typeof TOURNAMENT_KINDS)[number];
+  const number =
+    kind === "suspendido" || kind === "nooficial"
+      ? null
+      : input.official_number != null && Number.isFinite(input.official_number)
+        ? Math.trunc(input.official_number)
+        : null;
+  if (number != null && (number < 1 || number > 999)) return fail("Nº oficial inválido");
+  if (input.champion_team_id && input.champion_team_id === input.runner_up_team_id) {
+    return fail("Campeón y subcampeón no pueden ser el mismo");
+  }
+  const champion = kind === "oficial" ? input.champion_team_id : null;
+  const runner = kind === "oficial" ? input.runner_up_team_id : null;
+  const dq = kind === "oficial" ? input.disqualified_team_id : null;
+  const unofficial =
+    kind === "nooficial" ? (input.unofficial_winner_name?.trim() || null) : null;
+  const counts = kind === "oficial" ? Boolean(input.counts_as_final) : false;
+  const pitch = kind === "oficial" && input.pitch_result === "empate" ? "empate" : null;
   const sb = createAdminClient();
+  const { data: others } = await sb
+    .from("historical_tournaments")
+    .select("id, official_number, label, kind");
+  const rest = ((others ?? []) as { id: number; official_number: number | null; label: string; kind: string }[]).filter(
+    (row) => row.id !== input.id,
+  );
+  if (rest.some((row) => row.label === label)) return fail("Esa etiqueta ya existe");
+  if (number != null && rest.some((row) => row.official_number === number)) return fail(`El nº ${number} ya está usado`);
+  if (kind === "encurso" && rest.some((row) => row.kind === "encurso")) return fail("Ya hay un torneo en curso");
+  if (!input.id && kind === "oficial" && !champion) return fail("Falta el campeón");
   const payload = {
-    official_number: input.official_number,
-    label: input.label.trim(),
-    venue: input.venue,
-    notes: input.notes,
-    kind: input.kind,
-    champion_team_id: input.champion_team_id,
-    runner_up_team_id: input.runner_up_team_id,
-    runner_up_asterisk: input.runner_up_asterisk,
-    disqualified_team_id: input.disqualified_team_id,
-    counts_as_final: input.counts_as_final,
+    official_number: number,
+    label,
+    venue: input.venue?.trim() || null,
+    notes: input.notes?.trim() || null,
+    kind,
+    champion_team_id: champion,
+    runner_up_team_id: runner,
+    runner_up_asterisk: Boolean(input.runner_up_asterisk),
+    disqualified_team_id: dq,
+    counts_as_final: counts,
+    pitch_result: pitch,
+    unofficial_winner_name: unofficial,
+    photo_note: input.photo_note?.trim() || null,
   };
   if (input.id) {
     const { error } = await sb.from("historical_tournaments").update(payload).eq("id", input.id);
     if (error) return fail(error.message);
+    await log(who, "update", "historical_tournaments", input.id, label);
     touchPublic();
-    return { ok: true };
+    return { ok: true, data: { id: input.id } };
   }
   const { data: league } = await sb.from("leagues").select("id").limit(1).single();
   const { data: category } = await sb.from("categories").select("id").limit(1).single();
+  const { data: season } = await sb.from("seasons").select("id").limit(1).maybeSingle();
   const { data: last } = await sb
     .from("historical_tournaments")
     .select("sort_order")
     .order("sort_order", { ascending: false })
     .limit(1)
     .maybeSingle();
-  const { error } = await sb.from("historical_tournaments").insert({
-    ...payload,
-    league_id: league?.id,
-    category_id: category?.id,
-    sort_order: (last?.sort_order ?? -1) + 1,
-  });
-  if (error) return fail(error.message);
+  const { data, error } = await sb
+    .from("historical_tournaments")
+    .insert({
+      ...payload,
+      league_id: league?.id,
+      category_id: category?.id,
+      season_id: kind === "encurso" ? season?.id ?? null : null,
+      sort_order: (last?.sort_order ?? -1) + 1,
+    })
+    .select("id")
+    .single();
+  if (error || !data) return fail(error?.message ?? "No se pudo crear");
+  await log(who, "create", "historical_tournaments", data.id, label);
   touchPublic();
-  return { ok: true };
+  return { ok: true, data: { id: data.id } };
 }
 
 export async function saveSiteContent(input: {

@@ -347,3 +347,48 @@ export type CalendarMatch = {
   motm_player_id: number | null;
   motm_name: string | null;
 };
+
+export type ChampionKind = "oficial" | "nooficial" | "suspendido" | "encurso";
+
+export type ChampionShot = {
+  id: number;
+  kind: "champion_photo" | "champion_thumb";
+  src: string;
+  path: string;
+  caption: string | null;
+  sort_key: string | null;
+  width: number | null;
+  height: number | null;
+};
+
+export type ChampionTeamOpt = {
+  id: number;
+  name: string;
+  is_dissolved: boolean;
+};
+
+export type ChampionDossier = {
+  tournament: {
+    id: number;
+    official_number: number | null;
+    label: string;
+    venue: string | null;
+    notes: string | null;
+    kind: ChampionKind;
+    champion_team_id: number | null;
+    runner_up_team_id: number | null;
+    runner_up_asterisk: boolean;
+    disqualified_team_id: number | null;
+    pitch_result: string | null;
+    unofficial_winner_name: string | null;
+    photo_note: string | null;
+    counts_as_final: boolean;
+    sort_order: number;
+  };
+  teams: ChampionTeamOpt[];
+  photos: ChampionShot[];
+  usedNumbers: number[];
+  usedLabels: string[];
+  venues: string[];
+  currentId: number | null;
+};

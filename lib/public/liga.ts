@@ -63,6 +63,8 @@ export type PublicLiga = {
     thumb: string | null;
     venue: string | null;
     notes: string | null;
+    unofficial_winner: string | null;
+    runner_up_asterisk: boolean;
   }[];
   matches: {
     id: number;
@@ -159,7 +161,7 @@ export async function getPublicLiga(): Promise<PublicLiga> {
   }[];
   const logoByTeam = new Map<number, string>();
   const squadsByTeam = new Map<number, { src: string; caption: string | null; sort_key: string | null }[]>();
-  const photoByTournament = new Map<number, { photo: string | null; thumb: string | null }>();
+  const photoByTournament = new Map<number, { photo: string | null; thumb: string | null; photoKey: string; thumbKey: string }>();
   for (const row of media) {
     const src = publicSrc(row.object_path);
     if (!src) continue;
@@ -170,9 +172,21 @@ export async function getPublicLiga(): Promise<PublicLiga> {
       squadsByTeam.set(row.team_id, list);
     }
     if (row.historical_tournament_id && (row.kind === "champion_photo" || row.kind === "champion_thumb")) {
-      const cur = photoByTournament.get(row.historical_tournament_id) ?? { photo: null, thumb: null };
-      if (row.kind === "champion_photo") cur.photo = src;
-      else cur.thumb = src;
+      const cur = photoByTournament.get(row.historical_tournament_id) ?? {
+        photo: null,
+        thumb: null,
+        photoKey: "zzz",
+        thumbKey: "zzz",
+      };
+      const key = row.sort_key ?? "5";
+      if (row.kind === "champion_photo" && key.localeCompare(cur.photoKey) <= 0) {
+        cur.photo = src;
+        cur.photoKey = key;
+      }
+      if (row.kind === "champion_thumb" && key.localeCompare(cur.thumbKey) <= 0) {
+        cur.thumb = src;
+        cur.thumbKey = key;
+      }
       photoByTournament.set(row.historical_tournament_id, cur);
     }
   }
@@ -361,6 +375,8 @@ export async function getPublicLiga(): Promise<PublicLiga> {
       runner_up_team_id: number | null;
       venue: string | null;
       notes: string | null;
+      unofficial_winner_name: string | null;
+      runner_up_asterisk: boolean;
     }[]).map((row) => {
       const pics = photoByTournament.get(row.id);
       return {
@@ -376,6 +392,8 @@ export async function getPublicLiga(): Promise<PublicLiga> {
         thumb: pics?.thumb ?? pics?.photo ?? null,
         venue: row.venue,
         notes: row.notes,
+        unofficial_winner: row.unofficial_winner_name ?? null,
+        runner_up_asterisk: Boolean(row.runner_up_asterisk),
       };
     }),
     matches: ((matchesRes.data ?? []) as {

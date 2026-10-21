@@ -197,6 +197,33 @@
     gap: 1rem;
     flex-wrap: wrap;
   }
+  .cabecera.es-portada {
+    position: relative;
+    isolation: isolate;
+    padding: 1.15rem 1.25rem 1.25rem;
+    border-radius: 1rem;
+    background:
+      radial-gradient(130% 160% at 0% -10%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 58%),
+      radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--rueda2) 18%, transparent), transparent 52%),
+      var(--surface);
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--surface) 65%, transparent) inset,
+      0 14px 40px color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+  .cabecera.es-portada::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 38%, transparent);
+    z-index: 0;
+  }
+  .cabecera.es-portada > * { position: relative; z-index: 1; }
+  .cabecera.es-portada h1 {
+    text-shadow: 0 0 34px color-mix(in srgb, var(--accent) 28%, transparent);
+  }
   h1 {
     margin: 0;
     font-family: var(--display);
@@ -213,6 +240,18 @@
     margin: 0.5rem 0 0;
     font-size: 1.05rem;
     max-width: 70ch;
+  }
+  .dia .cuando-humano {
+    font-weight: 600;
+    font-size: 1.18rem;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+  }
+  .portada-lead {
+    margin: 0.4rem 0 0;
+    color: var(--muted);
+    font-size: 0.98rem;
+    max-width: 46ch;
   }
   .pasos {
     display: flex;
@@ -231,10 +270,37 @@
   /* Selector de fecha, separado en primera y segunda rueda */
   .ruedas {
     display: grid;
-    grid-template-columns: minmax(0, 9fr) minmax(0, 7fr);
+    grid-template-columns: auto minmax(0, 9fr) minmax(0, 7fr);
     gap: 1.1rem;
     margin: 1.5rem 0 2rem;
+    align-items: end;
   }
+  .portada-slot {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-width: 5.8rem;
+  }
+  .portada-cab { visibility: hidden; }
+  .chip-portada {
+    width: 100%;
+    padding: 0.45rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.4rem;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.15rem;
+    line-height: 1.1;
+    letter-spacing: 0.02em;
+  }
+  .chip-portada:hover { border-color: var(--ink); }
+  .chip-portada[aria-current="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .chip-portada[aria-current="true"]:focus-visible { outline-color: var(--ink); }
   .rueda-cab {
     display: flex;
     align-items: center;
@@ -317,6 +383,13 @@
   }
   .riel button.futura { border-style: dashed; color: var(--muted); }
   .riel button.futura[aria-current="true"] { border-style: solid; color: var(--accent-ink); }
+  .riel button.proxima:not([aria-current="true"]) {
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
+      0 0 16px color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--ink);
+  }
   .riel button:hover, .fichas button:hover { border-color: var(--ink); }
   .riel button[aria-current="true"], .fichas button[aria-current="true"] {
     background: var(--accent);
@@ -562,6 +635,15 @@
     font-weight: 600;
     font-size: 0.85rem;
     white-space: nowrap;
+  }
+  .panel.jornada-viva {
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+    box-shadow: 0 0 28px color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .jornada-viva .porjugar {
+    border-color: color-mix(in srgb, var(--pending) 50%, var(--line));
+    background: var(--pending-bg);
+    color: var(--pending);
   }
   .nota {
     margin: 0.75rem 0 0;
@@ -1208,6 +1290,9 @@
     .wrap { padding: 1.1rem 0.9rem 2.5rem; }
     .vistas { gap: 1.2rem; margin-bottom: 1.2rem; }
     .ruedas { grid-template-columns: minmax(0, 1fr); gap: 0.8rem; margin: 1.1rem 0 1.5rem; }
+    .portada-slot { min-width: 0; align-items: flex-start; }
+    .portada-cab { display: none; }
+    .chip-portada { width: auto; padding: 0.5rem 0.9rem; }
     .riel { gap: 0.25rem; }
     .riel button { padding: 0.55rem 0; font-size: 1.25rem; }
     .partido.sep .rueda-cab { padding: 0.5rem 0.75rem; }
@@ -1314,12 +1399,13 @@
 
   <!-- Vista por fecha -->
   <div id="v-fecha" role="tabpanel" aria-labelledby="t-fecha">
-    <div class="cabecera">
+    <div class="cabecera" id="cab-fecha">
       <div>
         <h1 id="titulo">Fecha</h1>
         <p class="dia" id="dia"></p>
+        <p class="portada-lead" id="portada-lead" hidden></p>
       </div>
-      <div class="pasos">
+      <div class="pasos" id="pasos">
         <button class="paso" id="antes" type="button">Fecha anterior</button>
         <button class="paso" id="despues" type="button">Fecha siguiente</button>
       </div>
@@ -1763,7 +1849,7 @@
   </dialog>
 
   <footer id="pie">
-    <p data-vistas="fecha equipo lideres fair sim">Datos tomados de lifexi.refereepro.com, según la actualización del 18 de octubre de 2026 a las 15:43.</p>
+    <p id="pie-fuente" data-vistas="fecha equipo lideres fair sim">Datos tomados de lifexi.refereepro.com, según la actualización del 18 de octubre de 2026 a las 15:43.</p>
     <p data-vistas="fecha sim">La tabla suma 3 puntos por triunfo, 1 por empate y 0 por derrota. Si hay igualdad de puntos se desempata en este orden: diferencia de gol, puntaje Fair Play, goles a favor, resultado directo entre los equipos igualados y sorteo. La flecha junto a la posición muestra cuántos puestos subió o bajó el equipo respecto de la fecha anterior.</p>
     <p data-vistas="fair">El puntaje Fair Play descuenta 1 punto por tarjeta amarilla, 4 por tarjeta roja, 6 por medio W.O. y 12 por W.O. completo. Una expulsión por doble amarilla cuenta solo como roja. El sitio de la liga no registra ningún W.O. en este torneo, así que aquí solo descuentan las tarjetas, acumuladas desde la fecha 1.</p>
     <p data-vistas="equipo lideres">En los jugadores, PJ son las veces que el jugador figura en la planilla de un partido. Una doble amarilla en un partido cuenta solo como roja, así que esas dos amarillas no se suman al jugador; las rojas cuentan toda expulsión, sea por doble amarilla o por roja directa. Al juntar 4 amarillas el jugador queda suspendido un partido, y la suspensión se da por cumplida en el primer partido siguiente de su equipo en que no figura en la planilla.</p>
@@ -2759,17 +2845,33 @@ function aplicarLiga(data) {
       if (c.n != null && t.official_number != null && c.n === t.official_number) row = c;
       else if (c.t === t.label) row = c;
     });
+    if (!row && t.label) {
+      row = {
+        n: t.official_number,
+        t: t.label,
+        lugar: t.venue || "",
+        nota: t.notes || "",
+        c: t.champion || null,
+        s: t.runner_up || null,
+        tipo: t.kind || "oficial",
+        ast: !!t.runner_up_asterisk,
+        ganador: t.unofficial_winner || undefined
+      };
+      CAMPEONES.push(row);
+    }
     if (row) {
       if (t.champion) row.c = t.champion;
       if (t.runner_up) row.s = t.runner_up;
       if (t.venue) row.lugar = t.venue;
       if (t.notes) row.nota = t.notes;
+      if (t.kind) row.tipo = t.kind;
+      if (t.official_number != null) row.n = t.official_number;
+      if (t.runner_up_asterisk != null) row.ast = t.runner_up_asterisk;
+      if (t.unofficial_winner) row.ganador = t.unofficial_winner;
       if (t.photo) {
         var fo = FOTOS[row.t] || [1400, 933, t.photo, t.thumb || t.photo];
         FOTOS[row.t] = [fo[0], fo[1], t.photo, t.thumb || fo[3] || t.photo];
       }
-    } else if (t.photo && t.label) {
-      FOTOS[t.label] = [1400, 933, t.photo, t.thumb || t.photo];
     }
   });
   (data.players || []).forEach(function (p) {
@@ -2868,9 +2970,12 @@ function aplicarLiga(data) {
       });
   }
   (data.content || []).forEach(function (c) {
-    if (c.slug === "home_subtitle" && c.title) {
+    if (c.slug === "home_subtitle") {
       var ligaEl = document.querySelector(".liga");
-      if (ligaEl) ligaEl.textContent = c.title;
+      if (ligaEl) {
+        if (c.title) ligaEl.textContent = c.title;
+        ligaEl.hidden = c.is_visible === false;
+      }
     }
     if (c.slug === "construction_banner") {
       var obra = document.querySelector(".obra");
@@ -2886,6 +2991,23 @@ function aplicarLiga(data) {
     if (c.slug === "sanctions_note" && c.body) {
       var sn = document.querySelector(".sanciones .nota");
       if (sn) sn.textContent = c.body;
+    }
+    var tabs = {
+      tab_fechas: "t-fecha",
+      tab_equipos: "t-equipo",
+      tab_lideres: "t-lideres",
+      tab_fair: "t-fair",
+      tab_sim: "t-sim",
+      tab_camp: "t-camp",
+      tab_hist: "t-hist"
+    };
+    var tabId = tabs[c.slug];
+    if (tabId) {
+      var tabBtn = document.getElementById(tabId);
+      if (tabBtn) {
+        if (c.title) tabBtn.textContent = c.title;
+        tabBtn.hidden = c.is_visible === false;
+      }
     }
   });
   if (data.history && data.history.length) {
@@ -3064,6 +3186,59 @@ if (typeof document !== "undefined") (function () {
     var a = iso.split("-").map(Number);
     return a[2] + " " + MESES_C[a[1] - 1];
   }
+  function hoyISO() {
+    var p = {};
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Santiago",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; });
+    return p.year + "-" + p.month + "-" + p.day;
+  }
+  function diasHasta(iso) {
+    var h = hoyISO().split("-").map(Number);
+    var t = iso.split("-").map(Number);
+    var a = Date.UTC(h[0], h[1] - 1, h[2]);
+    var b = Date.UTC(t[0], t[1] - 1, t[2]);
+    return Math.round((b - a) / 86400000);
+  }
+  function fechaHumana(iso) {
+    if (!iso) return "sin día";
+    var a = iso.split("-").map(Number);
+    var d = new Date(Date.UTC(a[0], a[1] - 1, a[2]));
+    var w = DIAS[d.getUTCDay()];
+    var diff = diasHasta(iso);
+    if (diff === 0) return "hoy";
+    if (diff === 1) return "mañana";
+    if (diff >= 2 && diff <= 6) return "este " + w;
+    var s = "el " + w + " " + a[2] + " de " + MESES[a[1] - 1];
+    if (a[0] !== Number(hoyISO().slice(0, 4))) s += " de " + a[0];
+    return s;
+  }
+  function fechaDeNumero(n) {
+    var fe = null;
+    FECHAS.forEach(function (f) { if (f.n === n) fe = f; });
+    if (fe && fe.p && fe.p.length) return fe;
+    return n >= 1 && n <= TOTAL ? fechaN(n) : fe;
+  }
+  function fechaIncompleta(f) {
+    if (!f || !f.p || !f.p.length) return true;
+    if (f.porJugar) return true;
+    return f.p.some(function (g) { return g[4] === null || g[5] === null; });
+  }
+  function proximaN() {
+    var hoy = hoyISO();
+    var porJugar = 0;
+    for (var n = 1; n <= TOTAL; n++) {
+      var f = fechaDeNumero(n);
+      var incompleta = fechaIncompleta(f) || n > ULTIMA;
+      if (!incompleta) continue;
+      if (f && f.dia && f.dia >= hoy) return n;
+      if (!porJugar) porJugar = n;
+    }
+    return porJugar || TOTAL;
+  }
   function el(tag, cls, txt) {
     var e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -3154,6 +3329,34 @@ if (typeof document !== "undefined") (function () {
   // ---------- Vistas ----------
   var VISTAS = ["fecha", "equipo", "lideres", "fair", "sim", "camp", "hist"];
   var vista = "fecha";
+  var HASH_VISTA = {
+    equipos: "equipo", lideres: "lideres", fair: "fair", sim: "sim", camp: "camp", hist: "hist",
+    fechas: "fecha", portada: "fecha"
+  };
+  var VISTA_HASH = {
+    equipo: "equipos", lideres: "lideres", fair: "fair", sim: "sim", camp: "camp", hist: "hist"
+  };
+  var silenciarHash = false;
+  function leerRuta() {
+    var h = (location.hash || "").replace(/^#/, "");
+    var fm = /^fecha-(\d+)$/.exec(h);
+    if (fm) {
+      var n = Number(fm[1]);
+      if (n >= 1 && n <= TOTAL) return { vista: "fecha", n: n };
+    }
+    if (!h || h === "portada" || h === "fechas") return { vista: "fecha", n: 0 };
+    if (HASH_VISTA[h]) return { vista: HASH_VISTA[h], n: 0 };
+    return { vista: "fecha", n: 0 };
+  }
+  function syncHash() {
+    if (silenciarHash) return;
+    var next = "";
+    if (vista === "fecha") next = actual > 0 ? "#fecha-" + actual : "";
+    else if (VISTA_HASH[vista]) next = "#" + VISTA_HASH[vista];
+    var url = location.pathname + location.search + next;
+    var now = location.pathname + location.search + (location.hash || "");
+    if (now !== url) history.replaceState(null, "", url);
+  }
   function verVista(v) {
     vista = v;
     VISTAS.forEach(function (x) {
@@ -3161,6 +3364,7 @@ if (typeof document !== "undefined") (function () {
       $("t-" + x).setAttribute("aria-selected", x === v ? "true" : "false");
     });
     pintarPie();
+    syncHash();
   }
   // Las notas del pie aparecen solo en las pestañas a las que se refieren.
   function pintarPie() {
@@ -3178,8 +3382,9 @@ if (typeof document !== "undefined") (function () {
   });
 
   // ---------- Vista por fecha ----------
-  var actual = 1;
+  var actual = 0;
   var botones = [];
+  var botonPortada = null;
   var filas = {};
   // Orden de la tabla: "pos" es la tabla real; cualquier otra columna la reordena sin cambiar el lugar real.
   var ordenTabla = { c: "pos", asc: true };
@@ -3190,6 +3395,19 @@ if (typeof document !== "undefined") (function () {
   };
 
   var rieles = {};
+  (function () {
+    var slot = el("div", "portada-slot");
+    var cabP = el("div", "rueda-cab portada-cab");
+    cabP.setAttribute("aria-hidden", "true");
+    cabP.appendChild(document.createTextNode("\u00a0"));
+    slot.appendChild(cabP);
+    botonPortada = el("button", "chip-portada", "Portada");
+    botonPortada.type = "button";
+    botonPortada.setAttribute("aria-label", "Portada");
+    botonPortada.addEventListener("click", function () { ir(0); });
+    slot.appendChild(botonPortada);
+    $("riel").appendChild(slot);
+  })();
   [1, 2].forEach(function (r) {
     var desde = r === 1 ? 1 : RUEDA2_DESDE, hasta = r === 1 ? RUEDA2_DESDE - 1 : TOTAL;
     var grupo = el("div", "rueda-grupo"), ol = el("ol", "riel");
@@ -3388,33 +3606,65 @@ if (typeof document !== "undefined") (function () {
       if (cc === "pos") ordenTabla = { c: "pos", asc: true };
       else if (ordenTabla.c === cc) ordenTabla.asc = !ordenTabla.asc;
       else ordenTabla = { c: cc, asc: false };
-      pintarTabla(actual);
+      pintarTabla(fechaVista());
     });
   });
   $("tab-real").addEventListener("click", function () {
     ordenTabla = { c: "pos", asc: true };
-    pintarTabla(actual);
+    pintarTabla(fechaVista());
   });
 
+  function fechaVista() {
+    return actual === 0 ? proximaN() : actual;
+  }
   function ir(n) {
-    if (n < 1 || n > TOTAL) return;
+    if (n < 0 || n > TOTAL) return;
     actual = n;
-    var f = fechaN(n);
-    $("titulo").textContent = "Fecha " + n;
+    var enPortada = n === 0;
+    var shown = fechaVista();
+    var f = fechaDeNumero(shown) || fechaN(shown);
+    var porJugar = !!(f && (f.porJugar || fechaIncompleta(f)));
+    $("titulo").textContent = "Fecha " + shown;
     $("dia").textContent = "";
-    $("dia").appendChild(etiquetaRueda(n));
-    $("dia").appendChild(document.createTextNode(fechaLarga(f.dia) + (f.porJugar ? ". Por jugar" : "")));
-    $("h-res").textContent = f.porJugar ? "Programación" : "Resultados";
-    $("h-tab").textContent = n === 1 ? "Tabla después de la fecha 1"
-      : "Tabla acumulada a la fecha " + Math.min(n, ULTIMA);
+    $("dia").appendChild(etiquetaRueda(shown));
+    if (enPortada) {
+      $("dia").appendChild(el("span", "cuando-humano", fechaHumana(f && f.dia)));
+    } else if (f && f.dia) {
+      $("dia").appendChild(document.createTextNode(fechaLarga(f.dia) + (porJugar ? ". Por jugar" : "")));
+    }
+    var lead = $("portada-lead");
+    var txt = "";
+    if (enPortada && LIGA && LIGA.content) {
+      LIGA.content.forEach(function (c) {
+        if (c.slug === "home_subtitle" && c.body) txt = c.body;
+      });
+    }
+    lead.textContent = txt;
+    lead.hidden = !txt;
+    $("h-res").textContent = porJugar ? "Programación" : "Resultados";
+    $("h-tab").textContent = shown === 1 ? "Tabla después de la fecha 1"
+      : "Tabla acumulada a la fecha " + Math.min(shown, ULTIMA);
+    if (botonPortada) {
+      if (enPortada) botonPortada.setAttribute("aria-current", "true");
+      else botonPortada.removeAttribute("aria-current");
+    }
+    var prox = proximaN();
     botones.forEach(function (b, k) {
-      if (k + 1 === n) b.setAttribute("aria-current", "true");
+      var num = k + 1;
+      if (!enPortada && num === n) b.setAttribute("aria-current", "true");
       else b.removeAttribute("aria-current");
+      if (num === prox) b.classList.add("proxima");
+      else b.classList.remove("proxima");
     });
-    $("antes").disabled = n === 1;
-    $("despues").disabled = n === TOTAL;
+    $("pasos").hidden = enPortada;
+    $("antes").disabled = n <= 1;
+    $("despues").disabled = n === TOTAL || enPortada;
+    $("cab-fecha").classList.toggle("es-portada", enPortada);
+    var panelRes = $("partidos").parentNode;
+    if (panelRes) panelRes.classList.toggle("jornada-viva", enPortada && porJugar);
     pintarResultados(f);
-    pintarTabla(n);
+    pintarTabla(shown);
+    syncHash();
   }
 
   $("antes").addEventListener("click", function () { ir(actual - 1); });
@@ -4576,7 +4826,10 @@ if (typeof document !== "undefined") (function () {
     }
   });
 
-  ir(ULTIMA);   // al abrir, la última fecha con resultados
+  var rutaInicio = leerRuta();
+  vista = rutaInicio.vista;
+  ir(rutaInicio.n);
+  verVista(rutaInicio.vista);
   irEquipo(equipo);
   cargarLiga().then(function () {
     ORDEN.forEach(function (i) {
@@ -4591,13 +4844,21 @@ if (typeof document !== "undefined") (function () {
     irEquipo(equipo);
   });
 
+  window.addEventListener("hashchange", function () {
+    var ruta = leerRuta();
+    silenciarHash = true;
+    verVista(ruta.vista);
+    if (ruta.vista === "fecha") ir(ruta.n);
+    silenciarHash = false;
+  });
+
   $("ir-home").addEventListener("click", function (e) {
     e.preventDefault();
     if (ficha.open) cerrarFicha();
     if (dlgJ.open) dlgJ.close();
     if (visor.open) cerrarFoto();
     verVista("fecha");
-    ir(ULTIMA);
+    ir(0);
     window.scrollTo(0, 0);
   });
 })();
