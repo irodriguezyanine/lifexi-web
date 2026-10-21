@@ -180,6 +180,7 @@ export async function saveChampionMedia(input: {
     if (error || !data) return fail(error?.message ?? "No se pudo guardar");
     id = data.id;
   }
+  if (!id) return fail("No se pudo guardar");
   if (input.cover) await promoteCover(sb, input.historical_tournament_id, id);
   touchPublic();
   return { ok: true, data: { id } };
@@ -267,7 +268,8 @@ export async function uploadChampionPhoto(formData: FormData): Promise<Result<{ 
     caption,
     cover: !asThumb,
   });
-  if (!saved.ok || !saved.data) return saved;
+  if (!saved.ok) return saved;
+  if (!saved.data) return fail("No se pudo guardar");
   return { ok: true, data: { url, id: saved.data.id } };
 }
 

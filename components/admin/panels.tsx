@@ -823,6 +823,7 @@ export function ChampionsPanel() {
     official_number: number | null;
     label: string;
     kind: string;
+    venue: string | null;
     champion_team_id: number | null;
     runner_up_team_id: number | null;
     unofficial_winner_name?: string | null;
