@@ -117,8 +117,14 @@
     color: var(--accent);
   }
   .marca .liga { margin-top: 0.25rem; }
-  .obra {
+  .obra-box {
     margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-shrink: 0;
+  }
+  .obra {
     padding: 0.35rem 0.8rem;
     border: 1px dashed var(--pending);
     border-radius: 999px;
@@ -127,6 +133,24 @@
     font-size: 0.85rem;
     font-weight: 600;
     white-space: nowrap;
+  }
+  a.login-liga {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+  }
+  a.login-liga svg {
+    width: 0.95rem;
+    height: 0.95rem;
   }
   .liga {
     margin: 0;
@@ -1030,7 +1054,7 @@
     .trio > div:first-child { border-top: 0; }
   }
   @media (max-width: 620px) {
-    .obra { margin-left: 0; }
+    .obra-box { margin-left: 0; }
     .vistas { flex-wrap: nowrap; }
     .wrap { padding: 1.1rem 0.9rem 2.5rem; }
     .vistas { gap: 1.2rem; margin-bottom: 1.2rem; }
@@ -1117,7 +1141,16 @@
       <p class="marca-nombre">LIFEXI</p>
       <p class="liga">Junior · Torneo Apertura 2026</p>
     </div>
-    <span class="obra">Sitio en construcción</span>
+    <div class="obra-box">
+      <span class="obra">Sitio en construcción</span>
+      <a class="login-liga" href="/login" title="Login" aria-label="Login">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="8" r="3.2"></circle>
+          <path d="M5 19c1.5-3.2 4-5 7-5s5.5 1.8 7 5"></path>
+        </svg>
+        Login
+      </a>
+    </div>
   </div>
 
   <div class="vistas" role="tablist" aria-label="Qué quieres ver">
