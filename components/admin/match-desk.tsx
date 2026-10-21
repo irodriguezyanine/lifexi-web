@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { getMatchWorkspace, saveMatchDesk, savePlayer } from "@/app/admin/actions";
+import { IconChevL, IconChevR } from "@/components/admin/icons";
 import type { AppearanceRow, EventKind, MatchEventRow, PlayerRow } from "@/lib/admin/types";
+import "@/app/admin/match-desk.css";
 
 type EventDraft = {
   key: string;
@@ -15,8 +17,12 @@ type EventDraft = {
   extra: string;
 };
 
+type SaveState = "idle" | "saving" | "saved" | "error";
+type MatchStatus = "played" | "scheduled" | "pending";
+
 const GOAL_KINDS: EventKind[] = ["goal", "penalty", "own_goal"];
 const CARD_KINDS: EventKind[] = ["yellow", "second_yellow", "red"];
+const TABS = ["Marcador", "Goles", "Tarjetas", "Cierre"] as const;
 
 function uid() {
   return Math.random().toString(36).slice(2, 9);
@@ -28,12 +34,19 @@ function asNum(v: string) {
   return Number.isFinite(n) ? n : null;
 }
 
+function clampScore(v: string) {
+  const n = Number(String(v).replace(/\D/g, "") || "0");
+  return String(Math.max(0, Math.min(20, n)));
+}
+
+function emptyGoal(teamId: number): EventDraft {
+  return { key: uid(), kind: "goal", teamId, playerId: "", assistPlayerId: "", minute: "", extra: "" };
+}
+
 function reconstruct(apps: AppearanceRow[]): EventDraft[] {
   const out: EventDraft[] = [];
   for (const a of apps) {
-    for (let i = 0; i < a.goals; i++) {
-      out.push({ key: uid(), kind: "goal", teamId: a.team_id, playerId: a.player_id, assistPlayerId: "", minute: "", extra: "" });
-    }
+    for (let i = 0; i < a.goals; i++) out.push({ ...emptyGoal(a.team_id), playerId: a.player_id });
     for (let i = 0; i < a.own_goals; i++) {
       out.push({ key: uid(), kind: "own_goal", teamId: a.team_id, playerId: a.player_id, assistPlayerId: "", minute: "", extra: "" });
     }
@@ -66,18 +79,39 @@ function fromSaved(events: MatchEventRow[]): EventDraft[] {
   }));
 }
 
+function goalSlotsFor(events: EventDraft[], teamId: number) {
+  return events.filter((e) => GOAL_KINDS.includes(e.kind) && e.teamId === teamId);
+}
+
+function syncGoalSlots(events: EventDraft[], homeId: number, awayId: number, hg: number, ag: number) {
+  const keep = events.filter((e) => !GOAL_KINDS.includes(e.kind));
+  function fit(teamId: number, want: number) {
+    const mine = goalSlotsFor(events, teamId);
+    if (mine.length === want) return mine;
+    if (mine.length < want) {
+      return [...mine, ...Array.from({ length: want - mine.length }, () => emptyGoal(teamId))];
+    }
+    const assigned = mine.filter((e) => e.playerId !== "");
+    const blank = mine.filter((e) => e.playerId === "");
+    return [...assigned, ...blank].slice(0, want);
+  }
+  return [...keep, ...fit(homeId, hg), ...fit(awayId, ag)];
+}
+
 function PlayerPick({
   players,
   value,
   onChange,
+  label = "Jugador",
 }: {
   players: PlayerRow[];
   value: number | "";
   onChange: (id: number | "") => void;
+  label?: string;
 }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value ? Number(e.target.value) : "")}>
-      <option value="">Jugador</option>
+      <option value="">{label}</option>
       {players.map((p) => (
         <option key={p.id} value={p.id}>
           {p.full_name}
@@ -87,20 +121,36 @@ function PlayerPick({
   );
 }
 
+function minuteLabel(e: EventDraft) {
+  if (!e.minute) return "—";
+  return e.extra ? `${e.minute}+${e.extra}'` : `${e.minute}'`;
+}
+
+function kindLabel(kind: EventKind) {
+  if (kind === "penalty") return "Penal";
+  if (kind === "own_goal") return "Autogol";
+  if (kind === "yellow") return "Amarilla";
+  if (kind === "second_yellow") return "Doble amarilla";
+  if (kind === "red") return "Roja";
+  return "Gol";
+}
+
 export function MatchDesk({ matchId }: { matchId: number }) {
-  const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [homeName, setHomeName] = useState("");
   const [awayName, setAwayName] = useState("");
+  const [homeLogo, setHomeLogo] = useState<string | null>(null);
+  const [awayLogo, setAwayLogo] = useState<string | null>(null);
   const [homeId, setHomeId] = useState(0);
   const [awayId, setAwayId] = useState(0);
   const [matchday, setMatchday] = useState<number | null>(null);
   const [homeGoals, setHomeGoals] = useState("0");
   const [awayGoals, setAwayGoals] = useState("0");
-  const [status, setStatus] = useState<"played" | "scheduled" | "pending">("played");
+  const [status, setStatus] = useState<MatchStatus>("played");
   const [kickoff, setKickoff] = useState("");
   const [pitch, setPitch] = useState("");
   const [notes, setNotes] = useState("");
@@ -113,6 +163,88 @@ export function MatchDesk({ matchId }: { matchId: number }) {
   const [events, setEvents] = useState<EventDraft[]>([]);
   const [newName, setNewName] = useState("");
   const [newTeam, setNewTeam] = useState<"home" | "away">("home");
+
+  const loadedRef = useRef(false);
+  const timerRef = useRef<number | null>(null);
+  const inflightRef = useRef(false);
+  const queuedRef = useRef(false);
+  const lastSavedRef = useRef("");
+  const payloadRef = useRef<Parameters<typeof saveMatchDesk>[0] | null>(null);
+
+  const hg = Number(homeGoals) || 0;
+  const ag = Number(awayGoals) || 0;
+  const goalEvents = events.filter((e) => GOAL_KINDS.includes(e.kind));
+  const cardEvents = events.filter((e) => CARD_KINDS.includes(e.kind));
+  const allPlayers = [...homePlayers, ...awayPlayers];
+
+  const payload = useMemo(
+    () => ({
+      matchId,
+      homeGoals: status === "played" ? hg : null,
+      awayGoals: status === "played" ? ag : null,
+      status,
+      kickoffTime: kickoff || null,
+      pitch: pitch || null,
+      notes: notes || null,
+      referee: referee || null,
+      walkover,
+      motmPlayerId: motm === "" ? null : Number(motm),
+      lineup,
+      replaceEvents: true,
+      events: events.map((e) => ({
+        kind: e.kind,
+        teamId: e.teamId,
+        playerId: e.playerId === "" ? null : Number(e.playerId),
+        assistPlayerId: e.assistPlayerId === "" ? null : Number(e.assistPlayerId),
+        minute: asNum(e.minute),
+        extraMinute: asNum(e.extra),
+        notes: null,
+      })),
+    }),
+    [matchId, hg, ag, status, kickoff, pitch, notes, referee, walkover, motm, lineup, events],
+  );
+
+  payloadRef.current = payload;
+
+  const flushSave = useCallback(async (reason: "auto" | "tab" | "manual" | "leave" = "auto") => {
+    if (!loadedRef.current || !payloadRef.current) return;
+    const snap = JSON.stringify(payloadRef.current);
+    if (snap === lastSavedRef.current && reason !== "manual") return;
+    if (inflightRef.current) {
+      queuedRef.current = true;
+      return;
+    }
+    inflightRef.current = true;
+    setSaveState("saving");
+    setError(null);
+    const res = await saveMatchDesk(payloadRef.current);
+    inflightRef.current = false;
+    if (!res.ok) {
+      setSaveState("error");
+      setError(res.error);
+      if (queuedRef.current) {
+        queuedRef.current = false;
+        window.setTimeout(() => void flushSave(reason), 900);
+      }
+      return;
+    }
+    lastSavedRef.current = snap;
+    setSaveState("saved");
+    setSavedAt(Date.now());
+    if (queuedRef.current) {
+      queuedRef.current = false;
+      await flushSave("auto");
+    }
+  }, []);
+
+  const scheduleSave = useCallback(() => {
+    if (!loadedRef.current) return;
+    setSaveState((cur) => (cur === "saving" ? cur : "idle"));
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => {
+      void flushSave("auto");
+    }, 700);
+  }, [flushSave]);
 
   useEffect(() => {
     void (async () => {
@@ -127,13 +259,15 @@ export function MatchDesk({ matchId }: { matchId: number }) {
           away_team_id: number;
           home_goals: number | null;
           away_goals: number | null;
-          status: "played" | "scheduled" | "pending";
+          status: MatchStatus;
           kickoff_time: string | null;
           pitch: string | null;
           notes: string | null;
           referee: string | null;
           walkover: string | null;
           motm_player_id: number | null;
+          home_logo: string | null;
+          away_logo: string | null;
           matchdays: { number: number } | { number: number }[] | null;
           home: { name: string } | { name: string }[] | null;
           away: { name: string } | { name: string }[] | null;
@@ -148,12 +282,14 @@ export function MatchDesk({ matchId }: { matchId: number }) {
       const md = Array.isArray(d.match.matchdays) ? d.match.matchdays[0] : d.match.matchdays;
       setHomeName(home?.name ?? "Local");
       setAwayName(away?.name ?? "Visita");
+      setHomeLogo(d.match.home_logo);
+      setAwayLogo(d.match.away_logo);
       setHomeId(d.match.home_team_id);
       setAwayId(d.match.away_team_id);
       setMatchday(md?.number ?? null);
       setHomeGoals(d.match.home_goals == null ? "0" : String(d.match.home_goals));
       setAwayGoals(d.match.away_goals == null ? "0" : String(d.match.away_goals));
-      setStatus(d.match.status === "played" ? "played" : d.match.status);
+      setStatus(d.match.status === "played" || d.match.status === "pending" ? d.match.status : "scheduled");
       setKickoff(d.match.kickoff_time?.slice(0, 5) ?? "");
       setPitch(d.match.pitch ?? "");
       setNotes(d.match.notes ?? "");
@@ -170,55 +306,86 @@ export function MatchDesk({ matchId }: { matchId: number }) {
         })),
       );
       setEvents(d.events.length ? fromSaved(d.events) : reconstruct(d.appearances));
-      if (d.match.status !== "played") setStep(0);
-      else setStep(3);
+      setStep(0);
       setLoaded(true);
+      setSaveState("saved");
     })();
   }, [matchId]);
 
-  const hg = Number(homeGoals) || 0;
-  const ag = Number(awayGoals) || 0;
+  useEffect(() => {
+    if (!loaded) return;
+    lastSavedRef.current = JSON.stringify(payloadRef.current);
+    loadedRef.current = true;
+  }, [loaded]);
 
-  const goalEvents = events.filter((e) => GOAL_KINDS.includes(e.kind));
-  const cardEvents = events.filter((e) => CARD_KINDS.includes(e.kind));
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") void flushSave("leave");
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+      void flushSave("leave");
+    };
+  }, [flushSave]);
 
-  const computed = useMemo(() => {
-    let home = 0;
-    let away = 0;
-    for (const e of events) {
-      if (e.kind === "goal" || e.kind === "penalty") {
-        if (e.teamId === homeId) home += 1;
-        if (e.teamId === awayId) away += 1;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!e.altKey) return;
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        go(Math.min(3, step + 1));
       }
-      if (e.kind === "own_goal") {
-        if (e.teamId === homeId) away += 1;
-        if (e.teamId === awayId) home += 1;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        go(Math.max(0, step - 1));
       }
-    }
-    return { home, away };
-  }, [events, homeId, awayId]);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [step]);
 
-  function applyScoreToGoals() {
+  function go(next: number) {
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    void flushSave("tab");
+    setStep(next);
+  }
+
+  function bump(side: "home" | "away", delta: number) {
+    const cur = side === "home" ? hg : ag;
+    const next = Math.max(0, Math.min(20, cur + delta));
+    const nextHome = side === "home" ? next : hg;
+    const nextAway = side === "away" ? next : ag;
+    if (side === "home") setHomeGoals(String(nextHome));
+    else setAwayGoals(String(nextAway));
+    setEvents((prev) => syncGoalSlots(prev, homeId, awayId, nextHome, nextAway));
     setStatus("played");
-    setEvents((prev) => {
-      const keep = prev.filter((e) => e.kind === "own_goal" || !GOAL_KINDS.includes(e.kind));
-      const make = (teamId: number, count: number) =>
-        Array.from({ length: count }, () => ({
-          key: uid(),
-          kind: "goal" as EventKind,
-          teamId,
-          playerId: "" as const,
-          assistPlayerId: "" as const,
-          minute: "",
-          extra: "",
-        }));
-      return [...keep, ...make(homeId, Number(homeGoals) || 0), ...make(awayId, Number(awayGoals) || 0)];
-    });
-    setStep(1);
+    scheduleSave();
+  }
+
+  function setScore(side: "home" | "away", raw: string) {
+    const next = Number(clampScore(raw));
+    const nextHome = side === "home" ? next : hg;
+    const nextAway = side === "away" ? next : ag;
+    if (side === "home") setHomeGoals(String(nextHome));
+    else setAwayGoals(String(nextAway));
+    setEvents((prev) => syncGoalSlots(prev, homeId, awayId, nextHome, nextAway));
+    setStatus("played");
+    scheduleSave();
+  }
+
+  function changeStatus(next: MatchStatus) {
+    setStatus(next);
+    if (next !== "scheduled") {
+      setEvents((prev) => syncGoalSlots(prev, homeId, awayId, hg, ag));
+    }
+    scheduleSave();
   }
 
   function updateEvent(key: string, patch: Partial<EventDraft>) {
     setEvents((prev) => prev.map((e) => (e.key === key ? { ...e, ...patch } : e)));
+    scheduleSave();
   }
 
   function addCard(teamId: number) {
@@ -226,12 +393,36 @@ export function MatchDesk({ matchId }: { matchId: number }) {
       ...prev,
       { key: uid(), kind: "yellow", teamId, playerId: "", assistPlayerId: "", minute: "", extra: "" },
     ]);
+    scheduleSave();
+  }
+
+  function addGoal(teamId: number) {
+    if (teamId === homeId) setScore("home", String(hg + 1));
+    else setScore("away", String(ag + 1));
   }
 
   function removeEvent(key: string) {
-    setEvents((prev) => prev.filter((e) => e.key !== key));
+    const target = events.find((e) => e.key === key);
+    setEvents((prev) => {
+      const next = prev.filter((e) => e.key !== key);
+      if (target && GOAL_KINDS.includes(target.kind)) {
+        const nextHome = goalSlotsFor(next, homeId).length;
+        const nextAway = goalSlotsFor(next, awayId).length;
+        setHomeGoals(String(nextHome));
+        setAwayGoals(String(nextAway));
+      }
+      return next;
+    });
+    scheduleSave();
   }
 
+  function toggleLineup(player: PlayerRow, isHome: boolean) {
+    setLineup((prev) => {
+      if (prev.some((l) => l.playerId === player.id)) return prev.filter((l) => l.playerId !== player.id);
+      return [...prev, { playerId: player.id, teamId: player.team_id, isHome }];
+    });
+    scheduleSave();
+  }
 
   async function addQuickPlayer() {
     const teamId = newTeam === "home" ? homeId : awayId;
@@ -249,125 +440,175 @@ export function MatchDesk({ matchId }: { matchId: number }) {
     if (newTeam === "home") setHomePlayers((p) => [...p, row].sort((a, b) => a.full_name.localeCompare(b.full_name, "es")));
     else setAwayPlayers((p) => [...p, row].sort((a, b) => a.full_name.localeCompare(b.full_name, "es")));
     setNewName("");
+    scheduleSave();
   }
 
-  function save() {
-    setError(null);
-    setOk(null);
-    start(async () => {
-      const res = await saveMatchDesk({
-        matchId,
-        homeGoals: status === "played" ? hg : null,
-        awayGoals: status === "played" ? ag : null,
-        status,
-        kickoffTime: kickoff || null,
-        pitch: pitch || null,
-        notes: notes || null,
-        referee: referee || null,
-        walkover: walkover,
-        motmPlayerId: motm === "" ? null : Number(motm),
-        lineup,
-        replaceEvents: true,
-        events: events.map((e) => ({
-          kind: e.kind,
-          teamId: e.teamId,
-          playerId: e.playerId === "" ? null : Number(e.playerId),
-          assistPlayerId: e.assistPlayerId === "" ? null : Number(e.assistPlayerId),
-          minute: asNum(e.minute),
-          extraMinute: asNum(e.extra),
-          notes: null,
-        })),
-      });
-      if (!res.ok) setError(res.error);
-      else setOk("Guardado");
-    });
-  }
+  const timeline = useMemo(() => {
+    return [...events]
+      .filter((e) => GOAL_KINDS.includes(e.kind) || CARD_KINDS.includes(e.kind))
+      .sort((a, b) => (Number(a.minute) || 99) - (Number(b.minute) || 99) || (Number(a.extra) || 0) - (Number(b.extra) || 0))
+      .slice(0, 12);
+  }, [events]);
+
+  const syncLabel =
+    saveState === "saving"
+      ? "Guardando"
+      : saveState === "error"
+        ? "Reintentar"
+        : saveState === "saved"
+          ? savedAt
+            ? "En la web"
+            : "Al día"
+          : "Sin guardar";
 
   if (!loaded) return <p className="adm-load">Cargando partido…</p>;
 
-  const allPlayers = [...homePlayers, ...awayPlayers];
-  const steps = ["Marcador", "Goles", "Tarjetas", "Cierre"];
+  const sides = [
+    { name: homeName, id: homeId, players: homePlayers, logo: homeLogo, goals: hg },
+    { name: awayName, id: awayId, players: awayPlayers, logo: awayLogo, goals: ag },
+  ];
 
   return (
-    <div>
-      <div className="adm-top">
-        <div>
-          <h1>
-            {homeName} — {awayName}
-          </h1>
-          <p>
+    <div className="md">
+      <div className="md-board">
+        <div className="md-board-top">
+          <p className="md-kicker">
             Fecha {matchday ?? "—"} · {kickoff || "hora por definir"}
             {pitch ? ` · cancha ${pitch}` : ""}
           </p>
+          <button
+            className={`md-sync ${saveState === "saving" ? "saving" : saveState === "saved" ? "saved" : saveState === "error" ? "err" : ""} ${status === "pending" ? "live" : ""}`}
+            type="button"
+            title="Sitio"
+            onClick={() => void flushSave("manual")}
+          >
+            <i />
+            {syncLabel}
+          </button>
         </div>
-        <Link className="adm-btn ghost" href="/admin/partidos">
-          Partidos
-        </Link>
+        <div className="md-scoreboard">
+          <div className="md-side">
+            <img src={homeLogo || "/img/logo-lifexi.png"} alt="" width={52} height={52} />
+            <strong>{homeName}</strong>
+            <div className="md-dial">
+              <button type="button" aria-label="Menos" onClick={() => bump("home", -1)}>
+                −
+              </button>
+              <b>{hg}</b>
+              <button type="button" aria-label="Más" onClick={() => bump("home", 1)}>
+                +
+              </button>
+            </div>
+          </div>
+          <div className="md-mid">
+            <span className={`md-pill ${status === "played" ? "ft" : status === "pending" ? "live" : "wait"}`}>
+              {status === "played" ? "Final" : status === "pending" ? "Pendiente" : "Por jugar"}
+            </span>
+            <em>—</em>
+          </div>
+          <div className="md-side">
+            <img src={awayLogo || "/img/logo-lifexi.png"} alt="" width={52} height={52} />
+            <strong>{awayName}</strong>
+            <div className="md-dial">
+              <button type="button" aria-label="Menos" onClick={() => bump("away", -1)}>
+                −
+              </button>
+              <b>{ag}</b>
+              <button type="button" aria-label="Más" onClick={() => bump("away", 1)}>
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="md-status" role="group" aria-label="Estado">
+          {(
+            [
+              ["scheduled", "Por jugar"],
+              ["pending", "Pendiente"],
+              ["played", "Final"],
+            ] as const
+          ).map(([id, label]) => (
+            <button key={id} type="button" className={status === id ? "on" : undefined} onClick={() => changeStatus(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="adm-steps">
-        {steps.map((label, i) => (
-          <span key={label} className={i === step ? "on" : undefined}>
+      <div className="md-tabs" role="tablist">
+        {TABS.map((label, i) => (
+          <button
+            key={label}
+            type="button"
+            role="tab"
+            aria-selected={i === step}
+            className={i === step ? "on" : undefined}
+            onClick={() => go(i)}
+          >
             {i + 1}. {label}
-          </span>
+          </button>
         ))}
       </div>
 
-      {error ? <p className="adm-alert">{error}</p> : null}
-      {ok ? <p className="adm-alert adm-ok">{ok}</p> : null}
+      {error ? (
+        <p className="adm-alert">
+          {error}{" "}
+          <button className="adm-btn ghost" type="button" onClick={() => void flushSave("manual")}>
+            Reintentar
+          </button>
+        </p>
+      ) : null}
 
       {step === 0 ? (
-        <section className="adm-card">
-          <div className="adm-score">
-            <div className="club">
-              <strong>{homeName}</strong>
-              <input inputMode="numeric" value={homeGoals} onChange={(e) => setHomeGoals(e.target.value.replace(/\D/g, ""))} />
-            </div>
-            <em>—</em>
-            <div className="club">
-              <strong>{awayName}</strong>
-              <input inputMode="numeric" value={awayGoals} onChange={(e) => setAwayGoals(e.target.value.replace(/\D/g, ""))} />
-            </div>
-          </div>
-          <div className="adm-form three" style={{ marginTop: "1rem" }}>
-            <label>
-              Estado
-              <select value={status} onChange={(e) => setStatus(e.target.value as typeof status)}>
-                <option value="played">Jugado</option>
-                <option value="pending">Pendiente</option>
-                <option value="scheduled">Por jugar</option>
-              </select>
-            </label>
+        <section className="adm-card md-panel">
+          <div className="md-meta">
             <label>
               Hora
-              <input value={kickoff} onChange={(e) => setKickoff(e.target.value)} placeholder="11:00" />
+              <input value={kickoff} onChange={(e) => { setKickoff(e.target.value); scheduleSave(); }} placeholder="11:00" />
             </label>
             <label>
               Cancha
-              <input value={pitch} onChange={(e) => setPitch(e.target.value)} />
+              <input value={pitch} onChange={(e) => { setPitch(e.target.value); scheduleSave(); }} />
+            </label>
+            <label>
+              Marcador
+              <span className="adm-row">
+                <input inputMode="numeric" value={homeGoals} onChange={(e) => setScore("home", e.target.value)} />
+                <input inputMode="numeric" value={awayGoals} onChange={(e) => setScore("away", e.target.value)} />
+              </span>
             </label>
           </div>
-          <div className="adm-actions">
-            <button className="adm-btn" type="button" onClick={applyScoreToGoals}>
-              Cargar goles
-            </button>
-          </div>
+          {timeline.length ? (
+            <div>
+              <p className="adm-k">Relato</p>
+              <div className="md-timeline">
+                {timeline.map((e) => (
+                  <div className="md-tl" key={e.key}>
+                    <b>{minuteLabel(e)}</b>
+                    <span className={`md-dot ${e.kind}`} />
+                    <span>
+                      {kindLabel(e.kind)} · {(allPlayers.find((p) => p.id === e.playerId)?.full_name ?? "Por asignar")} ·{" "}
+                      {e.teamId === homeId ? homeName : awayName}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="md-empty">+ y − cargan el marcador al instante. Las pestañas se pueden abrir en cualquier orden.</p>
+          )}
         </section>
       ) : null}
 
       {step === 1 ? (
-        <section className="adm-card">
-          <h2>¿De quién fueron los goles y en qué minuto?</h2>
-          {[
-            { name: homeName, id: homeId, players: homePlayers },
-            { name: awayName, id: awayId, players: awayPlayers },
-          ].map((side) => (
-            <div key={side.id} style={{ marginBottom: "1rem" }}>
-              <p className="adm-k">{side.name}</p>
-              {events
-                .filter((e) => GOAL_KINDS.includes(e.kind) && e.teamId === side.id)
-                .map((e, i) => (
-                  <div className="adm-event" key={e.key}>
+        <section className="adm-card md-panel">
+          <div className="md-grid">
+            {sides.map((side) => (
+              <div className="md-col" key={side.id}>
+                <h2>{side.name}</h2>
+                {goalSlotsFor(events, side.id).length === 0 ? <p className="md-empty">Sin goles</p> : null}
+                {goalSlotsFor(events, side.id).map((e, i) => (
+                  <div className={`md-event goal`} key={e.key}>
                     <select value={e.kind} onChange={(ev) => updateEvent(e.key, { kind: ev.target.value as EventKind })}>
                       <option value="goal">Gol {i + 1}</option>
                       <option value="penalty">Penal</option>
@@ -380,14 +621,25 @@ export function MatchDesk({ matchId }: { matchId: number }) {
                     />
                     <input placeholder="Min" value={e.minute} onChange={(ev) => updateEvent(e.key, { minute: ev.target.value.replace(/\D/g, "") })} />
                     <input placeholder="+" value={e.extra} onChange={(ev) => updateEvent(e.key, { extra: ev.target.value.replace(/\D/g, "") })} />
-                    <button className="adm-btn ghost" type="button" onClick={() => removeEvent(e.key)}>
-                      Quitar
+                    <button className="adm-btn ghost" type="button" title="Quitar" onClick={() => removeEvent(e.key)}>
+                      ×
                     </button>
+                    {e.kind !== "own_goal" ? (
+                      <PlayerPick
+                        players={side.players.filter((p) => p.id !== e.playerId)}
+                        value={e.assistPlayerId}
+                        onChange={(assistPlayerId) => updateEvent(e.key, { assistPlayerId })}
+                        label="Asistencia"
+                      />
+                    ) : null}
                   </div>
                 ))}
-            </div>
-          ))}
-          <p className="adm-k">Suma {computed.home}-{computed.away} · marcador {hg}-{ag}</p>
+                <button className="adm-btn ghost" type="button" onClick={() => addGoal(side.id)}>
+                  + Gol
+                </button>
+              </div>
+            ))}
+          </div>
           <div className="adm-form two">
             <label>
               Alta rápida
@@ -406,66 +658,55 @@ export function MatchDesk({ matchId }: { matchId: number }) {
               </span>
             </label>
           </div>
-          <div className="adm-actions">
-            <button className="adm-btn ghost" type="button" onClick={() => setStep(0)}>
-              Atrás
-            </button>
-            <button className="adm-btn" type="button" onClick={() => setStep(2)}>
-              Tarjetas
-            </button>
-          </div>
         </section>
       ) : null}
 
       {step === 2 ? (
-        <section className="adm-card">
-          <h2>¿Hubo tarjetas? ¿En qué minuto?</h2>
-          {[
-            { name: homeName, id: homeId, players: homePlayers },
-            { name: awayName, id: awayId, players: awayPlayers },
-          ].map((side) => (
-            <div key={side.id} style={{ marginBottom: "1rem" }}>
-              <p className="adm-k">{side.name}</p>
-              {cardEvents
-                .filter((e) => e.teamId === side.id)
-                .map((e) => (
-                  <div className="adm-event" key={e.key}>
-                    <select value={e.kind} onChange={(ev) => updateEvent(e.key, { kind: ev.target.value as EventKind })}>
-                      <option value="yellow">Amarilla</option>
-                      <option value="second_yellow">Doble amarilla</option>
-                      <option value="red">Roja</option>
-                    </select>
-                    <PlayerPick players={side.players} value={e.playerId} onChange={(playerId) => updateEvent(e.key, { playerId })} />
-                    <input placeholder="Min" value={e.minute} onChange={(ev) => updateEvent(e.key, { minute: ev.target.value.replace(/\D/g, "") })} />
-                    <input placeholder="+" value={e.extra} onChange={(ev) => updateEvent(e.key, { extra: ev.target.value.replace(/\D/g, "") })} />
-                    <button className="adm-btn ghost" type="button" onClick={() => removeEvent(e.key)}>
-                      Quitar
-                    </button>
-                  </div>
-                ))}
-              <button className="adm-btn ghost" type="button" onClick={() => addCard(side.id)}>
-                + Tarjeta
-              </button>
-            </div>
-          ))}
-          <div className="adm-actions">
-            <button className="adm-btn ghost" type="button" onClick={() => setStep(1)}>
-              Atrás
-            </button>
-            <button className="adm-btn" type="button" onClick={() => setStep(3)}>
-              Cierre
-            </button>
+        <section className="adm-card md-panel">
+          <div className="md-grid">
+            {sides.map((side) => (
+              <div className="md-col" key={side.id}>
+                <h2>{side.name}</h2>
+                {cardEvents.filter((e) => e.teamId === side.id).length === 0 ? <p className="md-empty">Sin tarjetas</p> : null}
+                {cardEvents
+                  .filter((e) => e.teamId === side.id)
+                  .map((e) => (
+                    <div className={`md-event ${e.kind}`} key={e.key}>
+                      <select value={e.kind} onChange={(ev) => updateEvent(e.key, { kind: ev.target.value as EventKind })}>
+                        <option value="yellow">Amarilla</option>
+                        <option value="second_yellow">Doble amarilla</option>
+                        <option value="red">Roja</option>
+                      </select>
+                      <PlayerPick players={side.players} value={e.playerId} onChange={(playerId) => updateEvent(e.key, { playerId })} />
+                      <input placeholder="Min" value={e.minute} onChange={(ev) => updateEvent(e.key, { minute: ev.target.value.replace(/\D/g, "") })} />
+                      <input placeholder="+" value={e.extra} onChange={(ev) => updateEvent(e.key, { extra: ev.target.value.replace(/\D/g, "") })} />
+                      <button className="adm-btn ghost" type="button" title="Quitar" onClick={() => removeEvent(e.key)}>
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                <button className="adm-btn ghost" type="button" onClick={() => addCard(side.id)}>
+                  + Tarjeta
+                </button>
+              </div>
+            ))}
           </div>
         </section>
       ) : null}
 
       {step === 3 ? (
-        <section className="adm-card">
-          <h2>Cierre del partido</h2>
+        <section className="adm-card md-panel">
+          <h2>Cierre</h2>
           <div className="adm-form two">
             <label>
               Estrella
-              <select value={motm} onChange={(e) => setMotm(e.target.value ? Number(e.target.value) : "")}>
+              <select
+                value={motm}
+                onChange={(e) => {
+                  setMotm(e.target.value ? Number(e.target.value) : "");
+                  scheduleSave();
+                }}
+              >
                 <option value="">Sin elegir</option>
                 {allPlayers.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -476,11 +717,11 @@ export function MatchDesk({ matchId }: { matchId: number }) {
             </label>
             <label>
               Árbitro
-              <input value={referee} onChange={(e) => setReferee(e.target.value)} />
+              <input value={referee} onChange={(e) => { setReferee(e.target.value); scheduleSave(); }} />
             </label>
             <label>
               W.O.
-              <select value={walkover} onChange={(e) => setWalkover(e.target.value)}>
+              <select value={walkover} onChange={(e) => { setWalkover(e.target.value); scheduleSave(); }}>
                 <option value="none">No</option>
                 <option value="home">Local gana</option>
                 <option value="away">Visita gana</option>
@@ -489,67 +730,57 @@ export function MatchDesk({ matchId }: { matchId: number }) {
               </select>
             </label>
             <label>
-              Alineación en planilla
-              <select
-                multiple
-                value={lineup.filter((l) => l.isHome).map((l) => String(l.playerId))}
-                onChange={(e) => {
-                  const home = Array.from(e.target.selectedOptions).map((o) => Number(o.value));
-                  const away = lineup.filter((l) => !l.isHome);
-                  setLineup([
-                    ...home.map((playerId) => ({ playerId, teamId: homeId, isHome: true })),
-                    ...away,
-                  ]);
-                }}
-                size={8}
-              >
-                {homePlayers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.full_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Alineación visita
-              <select
-                multiple
-                value={lineup.filter((l) => !l.isHome).map((l) => String(l.playerId))}
-                onChange={(e) => {
-                  const away = Array.from(e.target.selectedOptions).map((o) => Number(o.value));
-                  const home = lineup.filter((l) => l.isHome);
-                  setLineup([
-                    ...home,
-                    ...away.map((playerId) => ({ playerId, teamId: awayId, isHome: false })),
-                  ]);
-                }}
-                size={8}
-              >
-                {awayPlayers.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.full_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
               Notas
-              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
+              <textarea value={notes} onChange={(e) => { setNotes(e.target.value); scheduleSave(); }} />
             </label>
+          </div>
+          <div className="md-grid">
+            {[
+              { title: homeName, players: homePlayers, home: true },
+              { title: awayName, players: awayPlayers, home: false },
+            ].map((side) => (
+              <div key={side.title}>
+                <p className="adm-k">{side.title}</p>
+                <div className="md-squad">
+                  {side.players.map((p) => (
+                    <label key={p.id}>
+                      <input
+                        type="checkbox"
+                        checked={lineup.some((l) => l.playerId === p.id)}
+                        onChange={() => toggleLineup(p, side.home)}
+                      />
+                      {p.full_name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
           <p className="adm-k">
             {goalEvents.length} goles · {cardEvents.length} tarjetas · {lineup.length} en planilla
           </p>
-          <div className="adm-actions">
-            <button className="adm-btn ghost" type="button" onClick={() => setStep(0)}>
-              Editar todo
-            </button>
-            <button className="adm-btn" type="button" onClick={save} disabled={pending}>
-              {pending ? "Guardando…" : "Guardar partido"}
-            </button>
-          </div>
         </section>
       ) : null}
+
+      <div className="md-pager">
+        <button className="adm-btn ghost" type="button" disabled={step === 0} onClick={() => go(step - 1)}>
+          <IconChevL />
+          Volver
+        </button>
+        <span>
+          {step + 1} / {TABS.length}
+        </span>
+        {step < 3 ? (
+          <button className="adm-btn" type="button" onClick={() => go(step + 1)}>
+            Siguiente
+            <IconChevR />
+          </button>
+        ) : (
+          <Link className="adm-btn ghost" href="/admin/partidos">
+            Partidos
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

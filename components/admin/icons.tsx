@@ -77,6 +77,15 @@ export function IconBook() {
   );
 }
 
+export function IconSite() {
+  return (
+    <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <circle cx="12" cy="12" r="8" />
+      <path d="M4 12h16M12 4c2.4 2.6 3.8 5.2 3.8 8s-1.4 5.4-3.8 8c-2.4-2.6-3.8-5.2-3.8-8s1.4-5.4 3.8-8Z" />
+    </svg>
+  );
+}
+
 export function IconHome() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -101,6 +110,68 @@ export function IconCog() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <circle cx="12" cy="12" r="3" />
       <path d="M12 4.5v2M12 17.5v2M4.5 12h2M17.5 12h2M6.4 6.4l1.4 1.4M16.2 16.2l1.4 1.4M17.6 6.4l-1.4 1.4M7.8 16.2 6.4 17.6" />
+    </svg>
+  );
+}
+
+export function IconEye() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M3 12s3.5-7 9-7 9 7 9 7-3.5 7-9 7-9-7-9-7Z" />
+      <circle cx="12" cy="12" r="2.6" />
+    </svg>
+  );
+}
+
+export function IconEyeOff() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M4 5 20 19" />
+      <path d="M10.2 6.3A10 10 0 0 1 12 6c5.5 0 9 7 9 7a16 16 0 0 1-3.3 4.2" />
+      <path d="M6.6 8.6A16 16 0 0 0 3 13s3.5 7 9 7a9 9 0 0 0 3.4-.6" />
+      <path d="M10.2 10.3a2.6 2.6 0 0 0 3.5 3.5" />
+    </svg>
+  );
+}
+
+export function IconClose() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M6 6 18 18M18 6 6 18" />
+    </svg>
+  );
+}
+
+export function IconChevL() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="m14 5-7 7 7 7" />
+    </svg>
+  );
+}
+
+export function IconChevR() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="m10 5 7 7-7 7" />
+    </svg>
+  );
+}
+
+export function IconCopy() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <rect x="8" y="8" width="11" height="11" rx="2" />
+      <path d="M5 16V5h11" />
+    </svg>
+  );
+}
+
+export function IconEdit() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M4 20h4l10-10-4-4L4 16v4Z" />
+      <path d="m14 6 4 4" />
     </svg>
   );
 }

@@ -1,0 +1,587 @@
+/* Login móvil: reglas solo para teléfono / tablet / puntero grueso. */
+
+.adm-login {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  color-scheme: dark;
+}
+
+.adm-login .box {
+  max-width: 100%;
+}
+
+.adm-login .login-brand {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+}
+
+.adm-login .login-logo {
+  line-height: 0;
+  border-radius: 50%;
+}
+
+.adm-login .login-fields {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.adm-login .login-field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.adm-login .login-pass-wrap {
+  display: block;
+  position: relative;
+}
+
+.adm-login .login-pass-wrap input {
+  padding-right: 3.1rem;
+}
+
+.adm-login .login-eye {
+  position: absolute;
+  right: 0.2rem;
+  top: 50%;
+  translate: 0 -50%;
+  width: 2.6rem;
+  height: 2.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 0;
+  cursor: pointer;
+}
+
+.adm-login .login-eye svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.adm-login .login-home {
+  display: none;
+}
+
+.adm-login .login-submit {
+  width: 100%;
+  justify-content: center;
+}
+
+.adm-login .login-caps {
+  margin: 0;
+  color: var(--gold);
+  font-size: 0.82rem;
+}
+
+@media (pointer: coarse), (hover: none), (max-width: 900px) {
+  html {
+    height: 100%;
+    height: -webkit-fill-available;
+    height: 100dvh;
+    height: 100svh;
+  }
+
+  body:has(.adm-login) {
+    min-height: 100%;
+    min-height: 100dvh;
+    min-height: 100svh;
+    min-height: -webkit-fill-available;
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: rgb(232 240 235 / 0.12);
+  }
+
+  .adm-login {
+    min-height: 100%;
+    min-height: 100dvh;
+    min-height: 100svh;
+    min-height: -webkit-fill-available;
+    min-height: 100lvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: stretch;
+    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px), env(keyboard-inset-height, 0px));
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+    touch-action: pan-y;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color-scheme: dark;
+    background-attachment: fixed;
+  }
+
+  .adm-login .box {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 1.15rem 1.1rem calc(1.15rem + env(safe-area-inset-bottom, 0px));
+    border-radius: 22px 22px 18px 18px;
+    border: 1px solid rgb(42 60 51 / 0.9);
+    box-shadow:
+      0 -12px 40px rgb(0 0 0 / 0.35),
+      0 0 0 1px rgb(255 255 255 / 0.03) inset;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .adm-login .login-brand img,
+  .adm-login img {
+    width: 88px;
+    height: 88px;
+    max-width: 28vw;
+    max-height: 28vw;
+    border-radius: 50%;
+    background: #edf1ec;
+    object-fit: contain;
+    object-position: center;
+    pointer-events: auto;
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .adm-login .login-logo {
+    min-width: 44px;
+    min-height: 44px;
+    display: grid;
+    place-items: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .adm-login h1 {
+    font-size: clamp(1.7rem, 8vw, 2.2rem);
+    line-height: 1.05;
+    letter-spacing: 0.08em;
+    text-wrap: balance;
+  }
+
+  .adm-login .sub {
+    margin: 0.1rem 0 0.85rem;
+    font-size: 0.95rem;
+    line-height: 1.3;
+  }
+
+  .adm-login .login-home {
+    display: inline-flex;
+    align-self: center;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: max-content;
+    max-width: 100%;
+    flex: 0 0 auto;
+    min-height: 44px;
+    min-width: 44px;
+    margin: 0.15rem auto 0.85rem;
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 600;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .adm-login .login-home svg {
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+
+  .adm-login .adm-alert {
+    margin: 0 0 0.85rem;
+    padding: 0.85rem 0.95rem;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    border-radius: 14px;
+    border: 1px solid rgb(200 16 46 / 0.35);
+    scroll-margin-top: 1rem;
+  }
+
+  .adm-login .login-fields,
+  .adm-login .adm-form {
+    gap: 1rem;
+  }
+
+  .adm-login .login-field,
+  .adm-login label {
+    font-size: 0.92rem;
+    line-height: 1.25;
+    color: #c5d4cb;
+  }
+
+  .adm-login input,
+  .adm-login button,
+  .adm-login select,
+  .adm-login textarea {
+    font-size: 16px;
+    line-height: 1.35;
+    max-width: 100%;
+    border-radius: 14px;
+    -webkit-appearance: none;
+    appearance: none;
+    touch-action: manipulation;
+  }
+
+  .adm-login input[type="text"],
+  .adm-login input[type="password"] {
+    min-height: 48px;
+    padding: 0.85rem 0.95rem;
+    background: #0e1612;
+    color: var(--ink);
+    caret-color: var(--gold);
+    letter-spacing: 0.01em;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.02) inset;
+    scroll-margin-bottom: 7rem;
+    scroll-margin-top: 5rem;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  .adm-login input::placeholder {
+    color: #6f8578;
+    opacity: 1;
+    font-size: 16px;
+  }
+
+  .adm-login input:focus,
+  .adm-login input:focus-visible {
+    outline: 3px solid rgb(228 184 74 / 0.7);
+    outline-offset: 2px;
+    border-color: var(--gold);
+  }
+
+  .adm-login input:user-invalid,
+  .adm-login input[aria-invalid="true"] {
+    border-color: var(--red-2);
+  }
+
+  .adm-login input:-webkit-autofill,
+  .adm-login input:-webkit-autofill:hover,
+  .adm-login input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #e8f0eb;
+    caret-color: #e4b84a;
+    box-shadow: 0 0 0 1000px #0e1612 inset;
+    transition: background-color 9999s ease-out;
+  }
+
+  .adm-login input[type="password"] {
+    font-family: var(--body), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .adm-login .login-pass-wrap input {
+    padding-right: 3.4rem;
+  }
+
+  .adm-login .login-eye {
+    width: 48px;
+    height: 48px;
+    right: 0;
+    border-radius: 12px;
+    color: var(--ink);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .adm-login .login-eye:active {
+    background: rgb(255 255 255 / 0.06);
+  }
+
+  .adm-login .login-caps {
+    font-size: 0.9rem;
+    padding: 0 0.15rem;
+  }
+
+  .adm-login .login-submit,
+  .adm-login .adm-btn {
+    min-height: 52px;
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.9rem 1rem;
+    border-radius: 16px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    justify-content: center;
+    position: sticky;
+    bottom: 0;
+    bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 2;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    user-select: none;
+    -webkit-user-select: none;
+    color: #fff;
+  }
+
+  .adm-login .login-submit:active,
+  .adm-login .adm-btn:active {
+    filter: brightness(0.92);
+    transform: scale(0.985);
+  }
+
+  .adm-login .login-submit:disabled,
+  .adm-login .adm-btn:disabled {
+    opacity: 0.65;
+    pointer-events: none;
+  }
+
+  .adm-login .login-submit:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 3px;
+  }
+
+  .adm-login a,
+  .adm-login button {
+    cursor: pointer;
+  }
+
+  .adm-login .login-submit svg,
+  .adm-login .adm-btn svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    flex: none;
+  }
+
+  .adm-login input {
+    color-scheme: dark;
+    accent-color: var(--gold);
+  }
+
+  .adm-login .adm-alert {
+    text-wrap: pretty;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .adm-login .box {
+    contain: layout;
+    isolation: isolate;
+  }
+
+  .adm-login h1,
+  .adm-login .sub,
+  .adm-login label {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+@media (pointer: coarse), (hover: none) {
+  .adm-login .box:hover,
+  .adm-login .adm-btn:hover,
+  .adm-login .login-home:hover,
+  .adm-login .login-eye:hover {
+    filter: none;
+  }
+
+  .adm-login .login-home:active {
+    background: var(--panel-2);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 540px) {
+  .adm-login {
+    justify-content: flex-start;
+    padding-top: max(0.4rem, env(safe-area-inset-top, 0px));
+    padding-bottom: max(0.4rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .adm-login .box {
+    padding: 0.7rem 1rem 0.8rem;
+    border-radius: 16px;
+    gap: 0;
+  }
+
+  .adm-login .login-brand img,
+  .adm-login img {
+    width: 44px;
+    height: 44px;
+    max-width: 44px;
+    max-height: 44px;
+    margin-bottom: 0.2rem;
+  }
+
+  .adm-login h1 {
+    font-size: 1.35rem;
+  }
+
+  .adm-login .sub,
+  .adm-login .login-home {
+    display: none;
+  }
+
+  .adm-login .login-fields {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+
+  .adm-login .login-submit {
+    position: static;
+    min-height: 44px;
+    margin-top: 0.65rem;
+  }
+
+  .adm-login .adm-alert {
+    margin-bottom: 0.5rem;
+    padding: 0.55rem 0.7rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .adm-login {
+    padding-right: max(0.7rem, env(safe-area-inset-right, 0px));
+    padding-left: max(0.7rem, env(safe-area-inset-left, 0px));
+  }
+
+  .adm-login .box {
+    padding-right: 0.85rem;
+    padding-left: 0.85rem;
+  }
+
+  .adm-login h1 {
+    font-size: 1.55rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .adm-login .login-fields {
+    gap: 0.7rem;
+  }
+
+  .adm-login input[type="text"],
+  .adm-login input[type="password"] {
+    min-height: 44px;
+    padding: 0.7rem 0.8rem;
+  }
+}
+
+@media (min-width: 600px) and (pointer: coarse) {
+  .adm-login {
+    justify-content: center;
+    align-items: center;
+  }
+
+  .adm-login .box {
+    width: min(440px, 100%);
+    border-radius: 24px;
+    padding: 1.5rem 1.35rem 1.4rem;
+  }
+}
+
+@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+  .adm-login {
+    padding-top: max(1.2rem, env(safe-area-inset-top, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-login,
+  .adm-login * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .adm-login .login-submit:active,
+  .adm-login .adm-btn:active {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .adm-login,
+  .adm-login .box {
+    backdrop-filter: none;
+    background: #101813;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .adm-login input,
+  .adm-login .login-home,
+  .adm-login .box {
+    border-color: #e8f0eb;
+  }
+
+  .adm-login .login-submit {
+    outline: 2px solid #fff;
+    outline-offset: 1px;
+  }
+}
+
+@media (forced-colors: active) {
+  .adm-login .login-submit {
+    border: 2px solid ButtonText;
+  }
+
+  .adm-login input {
+    border: 2px solid ButtonText;
+  }
+}
+
+@media (dynamic-range: high) {
+  .adm-login .login-submit {
+    background: color(display-p3 0.78 0.08 0.18);
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  .adm-login input[type="text"],
+  .adm-login input[type="password"] {
+    font-size: 16px;
+    min-height: 48px;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .adm-login .login-submit {
+    min-height: 52px;
+    -webkit-appearance: none;
+  }
+
+  .adm-login {
+    min-height: -webkit-fill-available;
+  }
+}
+
+@supports (padding: max(0px)) {
+  .adm-login {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@supports not (height: 100dvh) {
+  .adm-login {
+    min-height: 100vh;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .adm-login .login-home {
+    display: none;
+  }
+}

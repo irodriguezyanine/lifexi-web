@@ -60,7 +60,25 @@
   display: flex;
   align-items: center;
   gap: 0.7rem;
+  width: 100%;
+  margin: 0;
   padding: 0.2rem 0.45rem 1rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.adm-brand:hover {
+  filter: brightness(1.08);
+}
+
+.adm-brand:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 10px;
 }
 
 .adm-brand img {
@@ -120,15 +138,33 @@
 }
 
 .adm-nav svg,
-.adm-iconbtn svg {
+.adm-iconbtn svg,
+.adm-btn svg {
   width: 16px;
   height: 16px;
   flex: none;
 }
 
-.adm-side form {
+.adm-side-foot {
   margin-top: auto;
+  display: grid;
+  gap: 0.35rem;
   padding: 0.8rem 0.45rem 0;
+}
+
+.adm-side-foot form {
+  margin: 0;
+}
+
+.adm-side-foot .adm-btn {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.adm-side-foot svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
 }
 
 .adm-main {
@@ -283,6 +319,17 @@
   border-radius: 10px;
   padding: 0.55rem 0.7rem;
   font: inherit;
+}
+
+.adm input[type="checkbox"],
+.adm input[type="radio"] {
+  width: auto;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--gold);
+  flex: none;
 }
 
 .adm textarea { min-height: 88px; resize: vertical; }

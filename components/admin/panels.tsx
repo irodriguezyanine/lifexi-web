@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import {
   addFixture,
@@ -15,7 +16,10 @@ import {
   saveTeam,
   saveTournament,
 } from "@/app/admin/actions";
+import { PlayerDossierModal } from "@/components/admin/player-dossier";
+import { TeamDossierModal } from "@/components/admin/team-dossier";
 import { useAdminData } from "@/components/admin/store";
+import type { TeamRow } from "@/lib/admin/types";
 
 function teamName(teams: { id: number; name: string }[], id: number) {
   return teams.find((t) => t.id === id)?.name ?? `#${id}`;
@@ -255,136 +259,282 @@ export function DatesPanel() {
   );
 }
 
+function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function mediaSrc(path: string | null | undefined) {
+  if (!path) return null;
+  if (path.startsWith("http") || path.startsWith("/")) return path;
+  return `/${path}`;
+}
+
 export function TeamsPanel() {
   const { data, loading, error, reload } = useAdminData();
   const [id, setId] = useState<number | "new" | null>(null);
+  const [q, setQ] = useState("");
+  const [rosterQ, setRosterQ] = useState("");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [slugLocked, setSlugLocked] = useState(false);
   const [dissolved, setDissolved] = useState(false);
   const [founding, setFounding] = useState(false);
+  const [openId, setOpenId] = useState<number | null>(null);
+  const [openTeam, setOpenTeam] = useState<number | null>(null);
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   if (loading) return <p className="adm-load">Cargando…</p>;
   if (error || !data) return <p className="adm-alert">{error ?? "Sin datos"}</p>;
+
+  const logos = new Map(
+    (data.media as { kind: string; object_path: string; team_id: number | null }[])
+      .filter((row) => row.kind === "team_logo" && row.team_id)
+      .map((row) => [row.team_id as number, mediaSrc(row.object_path)]),
+  );
+  const stats = data.stats as { player_id: number; matches_played: number; goals: number }[];
+  const teams = data.teams.filter((t) => !q || t.name.toLowerCase().includes(q.toLowerCase()));
   const selected = typeof id === "number" ? data.teams.find((t) => t.id === id) : null;
   const roster = typeof id === "number" ? data.players.filter((p) => p.team_id === id) : [];
+  const shown = roster.filter((p) => !rosterQ || p.full_name.toLowerCase().includes(rosterQ.toLowerCase()));
+  const logo = selected ? logos.get(selected.id) : null;
+
+  function pick(t: TeamRow, open = true) {
+    setId(t.id);
+    setName(t.name);
+    setSlug(t.slug);
+    setSlugLocked(true);
+    setDissolved(t.is_dissolved);
+    setFounding(t.is_founding_team);
+    setRosterQ("");
+    setMsg(null);
+    if (open) setOpenTeam(t.id);
+  }
 
   return (
     <>
       <Header title="Equipos" note="Ficha, plantel y altas." />
       {msg ? <p className="adm-alert">{msg}</p> : null}
-      <div className="adm-split">
-        <section className="adm-card adm-list">
-          <button
-            type="button"
-            onClick={() => {
-              setId("new");
-              setName("");
-              setSlug("");
-              setDissolved(false);
-              setFounding(false);
-            }}
-          >
-            + Equipo
-          </button>
-          {data.teams.map((t) => (
+      <div className="tm">
+        <section className="adm-card tm-list">
+          <div className="tm-list-head">
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" aria-label="Buscar equipo" />
             <button
-              key={t.id}
+              className="tm-add"
               type="button"
-              className={id === t.id ? "on" : undefined}
+              title="Alta"
+              aria-label="Alta"
               onClick={() => {
-                setId(t.id);
-                setName(t.name);
-                setSlug(t.slug);
-                setDissolved(t.is_dissolved);
-                setFounding(t.is_founding_team);
+                setId("new");
+                setName("");
+                setSlug("");
+                setSlugLocked(false);
+                setDissolved(false);
+                setFounding(false);
+                setRosterQ("");
               }}
             >
-              {t.name}
+              +
             </button>
-          ))}
+          </div>
+          <div className="tm-scroll">
+            {teams.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`tm-item${id === t.id ? " on" : ""}${t.is_dissolved ? " dim" : ""}`}
+                onClick={() => pick(t)}
+              >
+                {logos.get(t.id) ? <img src={logos.get(t.id) ?? ""} alt="" width={28} height={28} /> : <span className="tm-item-dot" />}
+                <span className="tm-name">{t.name}</span>
+                {t.is_founding_team ? <small>F</small> : null}
+              </button>
+            ))}
+          </div>
+          <p className="tm-count">{teams.length}</p>
         </section>
-        <section className="adm-card">
+
+        <div className="tm-main">
           {id == null ? (
-            <p className="adm-empty">Elegí un equipo</p>
+            <section className="adm-card tm-empty">Elegí un equipo</section>
           ) : (
             <>
-              <div className="adm-form">
-                <label>
-                  Nombre
-                  <input value={name} onChange={(e) => setName(e.target.value)} />
-                </label>
-                <label>
-                  Slug
-                  <input value={slug} onChange={(e) => setSlug(e.target.value)} />
-                </label>
-                <label>
-                  <span>
-                    <input type="checkbox" checked={founding} onChange={(e) => setFounding(e.target.checked)} /> Fundador
-                  </span>
-                </label>
-                <label>
-                  <span>
-                    <input type="checkbox" checked={dissolved} onChange={(e) => setDissolved(e.target.checked)} /> Disuelto
-                  </span>
-                </label>
-                <button
-                  className="adm-btn"
-                  type="button"
-                  disabled={pending}
-                  onClick={() =>
-                    start(async () => {
-                      const res = await saveTeam({
-                        id: typeof id === "number" ? id : undefined,
-                        name,
-                        slug: slug || name.toLowerCase().replace(/\s+/g, "-"),
-                        is_dissolved: dissolved,
-                        is_founding_team: founding,
-                      });
-                      if (!res.ok) setMsg(res.error);
-                      else {
-                        if (res.data) setId(res.data.id);
-                        void reload();
-                      }
-                    })
-                  }
-                >
-                  Guardar
-                </button>
-              </div>
+              <section className="adm-card tm-ficha">
+                <div className="tm-head">
+                  {logo ? <img src={logo} alt="" width={52} height={52} /> : null}
+                  <div>
+                    <h2>{id === "new" ? "Alta" : name || "Equipo"}</h2>
+                    <p>{id === "new" ? "Club nuevo" : `${roster.length} jugadores`}</p>
+                  </div>
+                </div>
+                <div className="tm-fields">
+                  <label>
+                    Nombre
+                    <input
+                      value={name}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        if (!slugLocked) setSlug(slugify(e.target.value));
+                      }}
+                    />
+                  </label>
+                  <label>
+                    Slug
+                    <input
+                      value={slug}
+                      onChange={(e) => {
+                        setSlugLocked(true);
+                        setSlug(e.target.value);
+                      }}
+                    />
+                  </label>
+                </div>
+                <div className="tm-flags">
+                  <label className="tm-flag">
+                    <input type="checkbox" checked={founding} onChange={(e) => setFounding(e.target.checked)} />
+                    <span className="tm-switch" />
+                    Fundador
+                  </label>
+                  <label className="tm-flag">
+                    <input type="checkbox" checked={dissolved} onChange={(e) => setDissolved(e.target.checked)} />
+                    <span className="tm-switch" />
+                    Disuelto
+                  </label>
+                </div>
+                <div className="tm-actions">
+                  <button
+                    className="adm-btn"
+                    type="button"
+                    disabled={pending || !name.trim()}
+                    onClick={() =>
+                      start(async () => {
+                        const res = await saveTeam({
+                          id: typeof id === "number" ? id : undefined,
+                          name,
+                          slug: slug || slugify(name),
+                          is_dissolved: dissolved,
+                          is_founding_team: founding,
+                        });
+                        if (!res.ok) setMsg(res.error);
+                        else {
+                          if (res.data) setId(res.data.id);
+                          setSlugLocked(true);
+                          void reload();
+                        }
+                      })
+                    }
+                  >
+                    {pending ? "Guardando" : "Guardar"}
+                  </button>
+                </div>
+              </section>
               {selected ? (
-                <>
-                  <h2>Plantel ({roster.length})</h2>
-                  <table className="adm-table">
-                    <tbody>
-                      {roster.map((p) => (
-                        <tr key={p.id}>
-                          <td>
-                            <Link href={`/admin/jugadores?id=${p.id}`}>{p.full_name}</Link>
-                          </td>
+                <section className="adm-card tm-plantel">
+                  <div className="tm-plantel-top">
+                    <h2>Plantel · {roster.length}</h2>
+                    <input value={rosterQ} onChange={(e) => setRosterQ(e.target.value)} placeholder="Buscar" aria-label="Buscar jugador" />
+                  </div>
+                  {shown.length === 0 ? (
+                    <p className="pd-empty">Sin jugadores</p>
+                  ) : (
+                    <table className="adm-table">
+                      <thead>
+                        <tr>
+                          <th>Jugador</th>
+                          <th>PJ</th>
+                          <th>G</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </>
+                      </thead>
+                      <tbody>
+                        {shown.map((p) => {
+                          const s = stats.find((row) => row.player_id === p.id);
+                          return (
+                            <tr
+                              key={p.id}
+                              className={openId === p.id ? "pd-row on" : "pd-row"}
+                              tabIndex={0}
+                              onClick={() => setOpenId(p.id)}
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter" || event.key === " ") {
+                                  event.preventDefault();
+                                  setOpenId(p.id);
+                                }
+                              }}
+                            >
+                              <td>{p.full_name}</td>
+                              <td>{s?.matches_played ?? 0}</td>
+                              <td>{s?.goals ?? 0}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </section>
               ) : null}
             </>
           )}
-        </section>
+        </div>
       </div>
+      {openTeam != null ? (
+        <TeamDossierModal
+          teamId={openTeam}
+          listIds={data.teams.map((t) => t.id)}
+          onClose={() => setOpenTeam(null)}
+          onOpen={(nextId) => {
+            const t = data.teams.find((row) => row.id === nextId);
+            if (t) pick(t, true);
+          }}
+          onOpenPlayer={setOpenId}
+          onSaved={() => void reload()}
+        />
+      ) : null}
+      {openId != null ? (
+        <PlayerDossierModal
+          playerId={openId}
+          listIds={data.players.filter((p) => p.team_id === (openTeam ?? (typeof id === "number" ? id : -1))).map((p) => p.id)}
+          onClose={() => setOpenId(null)}
+          onOpen={setOpenId}
+          onOpenTeam={(teamId) => {
+            const t = data.teams.find((row) => row.id === teamId);
+            if (t) pick(t, true);
+          }}
+        />
+      ) : null}
     </>
   );
 }
 
 export function PlayersPanel() {
   const { data, loading, error, reload } = useAdminData();
+  const router = useRouter();
+  const params = useSearchParams();
   const [q, setQ] = useState("");
   const [team, setTeam] = useState("all");
   const [name, setName] = useState("");
   const [teamId, setTeamId] = useState("");
   const [editId, setEditId] = useState<number | null>(null);
+  const [openId, setOpenId] = useState<number | null>(() => {
+    const raw = params.get("id");
+    const n = raw ? Number(raw) : NaN;
+    return Number.isFinite(n) ? n : null;
+  });
+  const [openTeam, setOpenTeam] = useState<number | null>(null);
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
+
+  function openPlayer(id: number) {
+    setOpenId(id);
+    router.replace(`/admin/jugadores?id=${id}`, { scroll: false });
+  }
+  function closePlayer() {
+    setOpenId(null);
+    router.replace("/admin/jugadores", { scroll: false });
+  }
   if (loading) return <p className="adm-load">Cargando…</p>;
   if (error || !data) return <p className="adm-alert">{error ?? "Sin datos"}</p>;
   const stats = data.stats as {
@@ -433,7 +583,18 @@ export function PlayersPanel() {
               {rows.map((p) => {
                 const s = stats.find((x) => x.player_id === p.id);
                 return (
-                  <tr key={p.id}>
+                  <tr
+                    key={p.id}
+                    className={openId === p.id ? "pd-row on" : "pd-row"}
+                    tabIndex={0}
+                    onClick={() => openPlayer(p.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openPlayer(p.id);
+                      }
+                    }}
+                  >
                     <td>{p.full_name}</td>
                     <td>{teamName(data.teams, p.team_id)}</td>
                     <td>{s?.matches_played ?? 0}</td>
@@ -444,7 +605,8 @@ export function PlayersPanel() {
                       <button
                         className="adm-btn ghost"
                         type="button"
-                        onClick={() => {
+                        onClick={(event) => {
+                          event.stopPropagation();
                           setEditId(p.id);
                           setName(p.full_name);
                           setTeamId(String(p.team_id));
@@ -502,6 +664,33 @@ export function PlayersPanel() {
           </div>
         </section>
       </div>
+      {openTeam != null ? (
+        <TeamDossierModal
+          teamId={openTeam}
+          listIds={data.teams.map((t) => t.id)}
+          onClose={() => setOpenTeam(null)}
+          onOpen={setOpenTeam}
+          onOpenPlayer={openPlayer}
+          onSaved={() => void reload()}
+        />
+      ) : null}
+      {openId != null ? (
+        <PlayerDossierModal
+          playerId={openId}
+          listIds={rows.map((p) => p.id)}
+          onClose={closePlayer}
+          onOpenTeam={setOpenTeam}
+          onOpen={openPlayer}
+          onEdit={() => {
+            const p = data.players.find((x) => x.id === openId);
+            if (!p) return;
+            setEditId(p.id);
+            setName(p.full_name);
+            setTeamId(String(p.team_id));
+            closePlayer();
+          }}
+        />
+      ) : null}
     </>
   );
 }

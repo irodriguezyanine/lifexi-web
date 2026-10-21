@@ -1,15 +1,15 @@
 import { Suspense } from "react";
 import { MatchDesk } from "@/components/admin/match-desk";
 
-async function Desk({ id }: { id: string }) {
+async function Desk({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   return <MatchDesk matchId={Number(id)} />;
 }
 
-export default async function Page({ params }: PageProps<"/admin/partidos/[id]">) {
-  const { id } = await params;
+export default function Page({ params }: PageProps<"/admin/partidos/[id]">) {
   return (
     <Suspense fallback={<p className="adm-load">Cargando partido…</p>}>
-      <Desk id={id} />
+      <Desk params={params} />
     </Suspense>
   );
 }

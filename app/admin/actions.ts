@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -11,6 +11,7 @@ import {
   sessionCookieOptions,
 } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { publicSrc } from "@/lib/media";
 import type { EventKind } from "@/lib/admin/types";
 
 const INITIAL_USER = "A";
@@ -28,6 +29,11 @@ async function actor() {
   } catch {
     return null;
   }
+}
+
+function touchPublic() {
+  revalidatePath("/");
+  revalidatePath("/api/public/liga");
 }
 
 async function log(
@@ -51,14 +57,16 @@ async function log(
   });
 }
 
-export async function loginAction(formData: FormData) {
+export type LoginState = { error?: string };
+
+export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const next = String(formData.get("next") ?? "/admin");
   const dest = next.startsWith("/admin") ? next : "/admin";
 
   if (!username || !password) {
-    redirect("/login?error=1");
+    return { error: "1" };
   }
 
   const sb = createAdminClient();
@@ -80,7 +88,7 @@ export async function loginAction(formData: FormData) {
     valid = !error;
   }
 
-  if (!valid) redirect("/login?error=1");
+  if (!valid) return { error: "1" };
 
   await sb
     .from("admin_users")
@@ -91,9 +99,9 @@ export async function loginAction(formData: FormData) {
   redirect(dest);
 }
 
-export async function logoutAction() {
-  (await cookies()).delete(ADMIN_COOKIE);
-  redirect("/login");
+export async function logoutAction(formData?: FormData) {
+  (await cookies()).set(ADMIN_COOKIE, "", { ...sessionCookieOptions(), maxAge: 0 });
+  redirect(formData?.get("to") === "public" ? "/" : "/login");
 }
 
 export async function getOverview(): Promise<ActionResult> {
@@ -173,18 +181,30 @@ export async function getMatchWorkspace(matchId: number): Promise<ActionResult> 
   match.home = homeTeam;
   match.away = awayTeam;
 
-  const [events, appearances, homePlayers, awayPlayers, seasonPlayers] = await Promise.all([
+  const [events, appearances, homePlayers, awayPlayers, seasonPlayers, logos] = await Promise.all([
     sb.from("match_events").select("*").eq("match_id", matchId).order("sort_order").order("id"),
     sb.from("match_appearances").select("*").eq("match_id", matchId),
     sb.from("players").select("id, full_name, team_id, source_index").eq("team_id", match.home_team_id).order("full_name"),
     sb.from("players").select("id, full_name, team_id, source_index").eq("team_id", match.away_team_id).order("full_name"),
     sb.from("players").select("id, full_name, team_id, source_index").eq("season_id", match.season_id),
+    sb
+      .from("media")
+      .select("team_id, object_path")
+      .eq("kind", "team_logo")
+      .in("team_id", [match.home_team_id, match.away_team_id]),
   ]);
+
+  const logoOf = (teamId: number) =>
+    publicSrc(logos.data?.find((row) => row.team_id === teamId)?.object_path ?? null);
 
   return {
     ok: true,
     data: {
-      match,
+      match: {
+        ...match,
+        home_logo: logoOf(match.home_team_id),
+        away_logo: logoOf(match.away_team_id),
+      },
       events: events.data ?? [],
       appearances: appearances.data ?? [],
       homePlayers: homePlayers.data ?? [],
@@ -237,22 +257,6 @@ function statsFromEvents(events: SaveMatchInput["events"], playerId: number) {
   return { goals, own_goals: own, yellows, reds };
 }
 
-function scoreFromEvents(events: SaveMatchInput["events"], homeId: number, awayId: number) {
-  let home = 0;
-  let away = 0;
-  for (const e of events) {
-    if (e.kind === "goal" || e.kind === "penalty") {
-      if (e.teamId === homeId) home += 1;
-      if (e.teamId === awayId) away += 1;
-    }
-    if (e.kind === "own_goal") {
-      if (e.teamId === homeId) away += 1;
-      if (e.teamId === awayId) home += 1;
-    }
-  }
-  return { home, away };
-}
-
 export async function saveMatchDesk(input: SaveMatchInput): Promise<ActionResult> {
   const who = await actor();
   if (!who) return fail("Sesión vencida");
@@ -265,18 +269,8 @@ export async function saveMatchDesk(input: SaveMatchInput): Promise<ActionResult
     .single();
   if (curErr || !current) return fail(curErr?.message ?? "Partido no encontrado");
 
-  if (input.status === "played") {
-    if (input.homeGoals == null || input.awayGoals == null) {
-      return fail("El partido jugado necesita marcador");
-    }
-    if (input.replaceEvents && input.events.length > 0 && !input.walkover) {
-      const scored = scoreFromEvents(input.events, current.home_team_id, current.away_team_id);
-      if (scored.home !== input.homeGoals || scored.away !== input.awayGoals) {
-        return fail(
-          `Los goles cargados (${scored.home}-${scored.away}) no coinciden con el marcador ${input.homeGoals}-${input.awayGoals}`,
-        );
-      }
-    }
+  if (input.status === "played" && (input.homeGoals == null || input.awayGoals == null)) {
+    return fail("El partido jugado necesita marcador");
   }
 
   const patch = {
@@ -368,6 +362,9 @@ export async function saveMatchDesk(input: SaveMatchInput): Promise<ActionResult
     patch,
   );
   revalidatePath("/admin");
+  revalidatePath("/admin/partidos");
+  revalidatePath(`/admin/partidos/${input.matchId}`);
+  touchPublic();
   return { ok: true };
 }
 
@@ -393,6 +390,7 @@ export async function saveTeam(input: {
       .eq("id", input.id);
     if (error) return fail(error.message);
     await log(who, "update", "teams", input.id, input.name);
+    touchPublic();
     return { ok: true, data: { id: input.id } };
   }
   const { data: league } = await sb.from("leagues").select("id").limit(1).single();
@@ -425,6 +423,7 @@ export async function saveTeam(input: {
     });
   }
   await log(who, "create", "teams", data.id, input.name);
+  touchPublic();
   return { ok: true, data: { id: data.id } };
 }
 
@@ -443,6 +442,7 @@ export async function savePlayer(input: {
       .eq("id", input.id);
     if (error) return fail(error.message);
     await log(who, "update", "players", input.id, input.full_name);
+    touchPublic();
     return { ok: true, data: { id: input.id } };
   }
   const { data: season } = await sb.from("seasons").select("id").limit(1).single();
@@ -465,6 +465,7 @@ export async function savePlayer(input: {
     .single();
   if (error || !data) return fail(error?.message ?? "No se pudo crear");
   await log(who, "create", "players", data.id, input.full_name);
+  touchPublic();
   return { ok: true, data: { id: data.id } };
 }
 
@@ -490,6 +491,7 @@ export async function saveMatchday(input: {
       .eq("id", input.id);
     if (error) return fail(error.message);
     await log(who, "update", "matchdays", input.id, `Fecha ${input.number}`);
+    touchPublic();
     return { ok: true, data: { id: input.id } };
   }
   const { data: season } = await sb.from("seasons").select("id").limit(1).single();
@@ -506,6 +508,7 @@ export async function saveMatchday(input: {
     .single();
   if (error || !data) return fail(error?.message ?? "No se pudo crear");
   await log(who, "create", "matchdays", data.id, `Fecha ${input.number}`);
+  touchPublic();
   return { ok: true, data: { id: data.id } };
 }
 
@@ -549,6 +552,7 @@ export async function addFixture(input: {
     .single();
   if (error || !data) return fail(error?.message ?? "No se pudo crear el partido");
   await log(who, "create", "matches", data.id, source_key);
+  touchPublic();
   return { ok: true, data: { id: data.id } };
 }
 
@@ -581,6 +585,7 @@ export async function saveSanction(input: {
       .update({ player_id: input.player_id, detail: input.detail, sanction: input.sanction })
       .eq("id", input.id);
     if (error) return fail(error.message);
+    touchPublic();
     return { ok: true };
   }
   const { data: season } = await sb.from("seasons").select("id").limit(1).single();
@@ -599,6 +604,7 @@ export async function saveSanction(input: {
   });
   if (error) return fail(error.message);
   await log(who, "create", "published_sanctions", undefined, input.detail);
+  touchPublic();
   return { ok: true };
 }
 
@@ -609,6 +615,7 @@ export async function deleteSanction(id: number): Promise<ActionResult> {
   const { error } = await sb.from("published_sanctions").delete().eq("id", id);
   if (error) return fail(error.message);
   await log(who, "delete", "published_sanctions", id);
+  touchPublic();
   return { ok: true };
 }
 
@@ -627,6 +634,7 @@ export async function saveHistoryEntry(input: {
       .update({ body: input.body, is_lead: input.is_lead, sort_order: input.sort_order })
       .eq("id", input.id);
     if (error) return fail(error.message);
+    touchPublic();
     return { ok: true };
   }
   const { data: league } = await sb.from("leagues").select("id").limit(1).single();
@@ -637,6 +645,7 @@ export async function saveHistoryEntry(input: {
     sort_order: input.sort_order,
   });
   if (error) return fail(error.message);
+  touchPublic();
   return { ok: true };
 }
 
@@ -671,6 +680,7 @@ export async function saveTournament(input: {
   if (input.id) {
     const { error } = await sb.from("historical_tournaments").update(payload).eq("id", input.id);
     if (error) return fail(error.message);
+    touchPublic();
     return { ok: true };
   }
   const { data: league } = await sb.from("leagues").select("id").limit(1).single();
@@ -688,6 +698,7 @@ export async function saveTournament(input: {
     sort_order: (last?.sort_order ?? -1) + 1,
   });
   if (error) return fail(error.message);
+  touchPublic();
   return { ok: true };
 }
 
@@ -712,6 +723,7 @@ export async function saveSiteContent(input: {
     .eq("id", input.id);
   if (error) return fail(error.message);
   await log(who, "update", "site_content", input.id, input.title ?? undefined);
+  touchPublic();
   return { ok: true };
 }
 
@@ -724,6 +736,7 @@ export async function saveMediaCaption(input: {
   const sb = createAdminClient();
   const { error } = await sb.from("media").update({ caption: input.caption }).eq("id", input.id);
   if (error) return fail(error.message);
+  touchPublic();
   return { ok: true };
 }
 
@@ -750,6 +763,7 @@ export async function saveSeason(input: {
     .eq("id", input.id);
   if (error) return fail(error.message);
   await log(who, "update", "seasons", input.id, input.name);
+  touchPublic();
   return { ok: true };
 }
 

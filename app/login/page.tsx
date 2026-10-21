@@ -1,12 +1,13 @@
 import { Suspense } from "react";
 import { LoginForm } from "./ui";
 import "../admin/admin.css";
+import "./login.css";
 
-export const metadata = {
-  title: "Login · LIFEXI",
-};
-
-async function LoginInner({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+async function LoginInner({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const params = await searchParams;
   const error = typeof params.error === "string" ? params.error : undefined;
   const nextPath = typeof params.next === "string" && params.next.startsWith("/admin") ? params.next : "/admin";

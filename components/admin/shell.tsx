@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { logoutAction } from "@/app/admin/actions";
 import { AdminStore } from "@/components/admin/store";
 import {
   IconBall,
@@ -14,6 +13,7 @@ import {
   IconImage,
   IconPeople,
   IconShield,
+  IconSite,
   IconStar,
   IconTable,
   IconUser,
@@ -63,13 +63,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <div className="adm">
       <div className="adm-shell">
         <aside className="adm-side">
-          <Link href="/admin" className="adm-brand">
-            <img src="/img/logo-lifexi.png" alt="" width={42} height={42} />
-            <span>
-              <strong>LIFEXI</strong>
-              <span>Match Center</span>
-            </span>
-          </Link>
+          <form action="/admin/logout?to=public" method="post">
+            <button className="adm-brand" type="submit" title="Sitio" aria-label="Sitio">
+              <img src="/img/logo-lifexi.png" alt="" width={42} height={42} />
+              <span>
+                <strong>LIFEXI</strong>
+                <span>Match Center</span>
+              </span>
+            </button>
+          </form>
           {GROUPS.map((group) => (
             <nav key={group.label} className="adm-nav" aria-label={group.label}>
               <p className="adm-k">{group.label}</p>
@@ -88,12 +90,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               })}
             </nav>
           ))}
-          <form action={logoutAction}>
-            <button className="adm-btn ghost" type="submit">
-              <IconUser />
-              Salir
-            </button>
-          </form>
+          <div className="adm-side-foot">
+            <form action="/admin/logout?to=public" method="post">
+              <button className="adm-btn ghost" type="submit" title="Sitio" aria-label="Sitio">
+                <IconSite />
+                Sitio
+              </button>
+            </form>
+            <form action="/admin/logout" method="post">
+              <button className="adm-btn ghost" type="submit" title="Salir" aria-label="Salir">
+                <IconUser />
+                Salir
+              </button>
+            </form>
+          </div>
         </aside>
         <div className="adm-main">
           <AdminStore>{children}</AdminStore>

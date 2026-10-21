@@ -147,10 +147,14 @@
     font-weight: 600;
     line-height: 1;
     text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   a.login-liga svg {
     width: 0.95rem;
     height: 0.95rem;
+    flex-shrink: 0;
+    pointer-events: none;
   }
   .liga {
     margin: 0;
@@ -322,6 +326,101 @@
   .riel button[aria-current="true"]:focus-visible,
   .fichas button[aria-current="true"]:focus-visible { outline-color: var(--ink); }
 
+  .eq-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.4rem 0 0;
+  }
+  .eq-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: var(--lead);
+    border: 1px solid var(--line);
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .eq-ptabs {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding: 0.15rem 0 0.75rem;
+    margin: 0;
+  }
+  .eq-ptabs button {
+    flex: none;
+    display: grid;
+    justify-items: center;
+    gap: 0.25rem;
+    min-width: 6.5rem;
+    padding: 0.3rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .eq-ptabs button[aria-selected="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .eq-ptabs img {
+    width: 6.2rem;
+    height: 4.1rem;
+    object-fit: cover;
+    border-radius: 0.3rem;
+    background: #111;
+  }
+  .eq-camp-marco {
+    margin: 0 0 1rem;
+  }
+  .eq-camp-marco img {
+    width: 100%;
+    max-height: 28rem;
+    object-fit: contain;
+    background: #111;
+    border-radius: 0.4rem;
+  }
+  .eq-jrow { cursor: pointer; }
+  .eq-jrow:hover td { background: var(--lead); }
+  .barra input[type="search"] {
+    width: min(16rem, 100%);
+    height: 2.4rem;
+    padding: 0 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 0.4rem;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+  }
+  #eq-jug { width: min(28rem, calc(100vw - 1.5rem)); }
+  .ej-kpis {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.4rem;
+    margin: 1rem 0;
+  }
+  .ej-kpis div {
+    background: var(--lead);
+    border-radius: 0.5rem;
+    padding: 0.45rem 0.4rem;
+    text-align: center;
+  }
+  .ej-kpis b { display: block; font-family: var(--display); font-size: 1.4rem; line-height: 1; }
+  .ej-kpis span { color: var(--muted); font-size: 0.72rem; }
+  .ej-clubes { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .ej-clubes button {
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
   /* Logos de equipos: caja cuadrada con fondo blanco, como vienen en el sitio de la liga */
   .logo {
     width: 1.75rem;
@@ -418,6 +517,14 @@
     line-height: 1;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+  }
+  .goles.en-vivo { color: #1a7a45; }
+  .goles.en-vivo::after {
+    content: " LIVE";
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+    margin-left: 0.2rem;
+    vertical-align: super;
   }
   .pendiente {
     display: inline-block;
@@ -683,7 +790,7 @@
     font-size: 0.92rem;
   }
   .barra label { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--ink); cursor: pointer; }
-  .barra input { width: 1.05rem; height: 1.05rem; accent-color: var(--accent); }
+  .barra input[type="checkbox"] { width: 1.05rem; height: 1.05rem; accent-color: var(--accent); }
   .mas { margin-top: 0.75rem; }
   .angosta { max-width: 44rem; }
 
@@ -1035,6 +1142,20 @@
   footer p { margin: 0 0 0.4rem; max-width: 78ch; }
 
   @media (max-width: 860px) {
+    a.login-liga {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 0.7rem 0.95rem;
+      gap: 0.4rem;
+      font-size: 0.95rem;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      flex-shrink: 0;
+    }
+    a.login-liga svg { width: 1.15rem; height: 1.15rem; }
+    a.login-liga:active { background: var(--line); }
+    .obra-box { gap: 0.55rem; }
     .cols, .cols.pares, .cols.inv { grid-template-columns: minmax(0, 1fr); gap: 1.75rem; }
     .llaves { grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
     .trio { grid-template-columns: minmax(0, 1fr); }
@@ -1054,7 +1175,20 @@
     .trio > div:first-child { border-top: 0; }
   }
   @media (max-width: 620px) {
-    .obra-box { margin-left: 0; }
+    .obra-box {
+      margin-left: 0;
+      width: 100%;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      padding-top: 0.15rem;
+    }
+    a.login-liga {
+      margin-left: auto;
+      min-height: 48px;
+      padding: 0.75rem 1rem;
+    }
     .vistas { flex-wrap: nowrap; }
     .wrap { padding: 1.1rem 0.9rem 2.5rem; }
     .vistas { gap: 1.2rem; margin-bottom: 1.2rem; }
@@ -1224,7 +1358,10 @@
   <div id="v-equipo" role="tabpanel" aria-labelledby="t-equipo" hidden>
     <div class="eq-cab">
       <img class="logo grande" id="eq-logo" alt="">
-      <h1 class="largo" id="eq-titulo"></h1>
+      <div>
+        <h1 class="largo" id="eq-titulo"></h1>
+        <p class="eq-chips" id="eq-chips"></p>
+      </div>
     </div>
     <p class="dia" id="eq-resumen"></p>
 
@@ -1241,6 +1378,11 @@
       <div class="panel trio" id="eq-historia"></div>
       <div id="eq-fotos-caja" hidden>
         <h3 class="sub" id="h-eqfotos">Fotos de sus títulos</h3>
+        <div class="eq-ptabs" id="eq-camp-tabs" role="tablist" aria-label="Campeonatos"></div>
+        <figure class="eq-camp-marco" id="eq-camp-marco" hidden>
+          <img id="eq-camp-img" alt="">
+          <figcaption class="nota" id="eq-camp-pie"></figcaption>
+        </figure>
         <ul class="galeria" id="eq-fotos" aria-labelledby="h-eqfotos"></ul>
         <p class="nota" id="eq-fotos-nota"></p>
       </div>
@@ -1260,7 +1402,8 @@
         <h2 id="h-plantel">Jugadores</h2>
         <div class="barra">
           <span id="eq-cuenta"></span>
-          <label><input type="checkbox" id="solo"> Mostrar solo quienes han jugado</label>
+          <input type="search" id="eq-buscar" placeholder="Buscar" aria-label="Buscar jugador">
+          <label><input type="checkbox" id="solo"> Con partidos</label>
         </div>
         <div class="panel deslizar">
           <table class="lista" id="plantel">
@@ -1565,6 +1708,19 @@
       ★ Jugador del Partido. Si tiene foto, toca su nombre para verla.
       Jugadores según la planilla del partido en el sitio de la liga.
     </p>
+    </div>
+  </dialog>
+
+  <dialog id="eq-jug" aria-labelledby="ej-nombre">
+    <div class="fi-caja">
+      <div class="fi-cab">
+        <p class="fi-cuando" id="ej-meta"></p>
+        <button class="paso" id="ej-cerrar" type="button">Cerrar</button>
+      </div>
+      <h2 id="ej-nombre"></h2>
+      <div class="ej-kpis" id="ej-kpis"></div>
+      <p class="nota" id="ej-otros-tit" hidden>También figura en</p>
+      <div class="ej-clubes" id="ej-clubes"></div>
     </div>
   </dialog>
 
@@ -2551,6 +2707,193 @@ JUGADORES.forEach(function (j, idx) { j[4] = DISCIPLINA[idx].am; });
 JUGADORES.forEach(function (j) { j[6] = 0; });
 Object.keys(ESTRELLAS).forEach(function (clave) { JUGADORES[ESTRELLAS[clave]][6]++; });
 
+var LIGA = null;
+function aplicarLiga(data) {
+  LIGA = data;
+  if (!data || !data.teams) return;
+  data.teams.forEach(function (t) {
+    if (t.source_index == null || t.source_index < 0) {
+      if (t.logo) LOGOS_HIST[t.name] = [64, 64, t.logo];
+      return;
+    }
+    var i = t.source_index;
+    var viejo = EQUIPOS[i];
+    if (viejo && !t.is_dissolved) {
+      var dx = DISUELTOS.indexOf(viejo);
+      if (dx >= 0) DISUELTOS.splice(dx, 1);
+    }
+    EQUIPOS[i] = t.name;
+    if (t.logo && LOGOS[i]) LOGOS[i][2] = t.logo;
+    if (t.squad_photo) {
+      var pl = PLANTELES[i] || [1500, 1000, t.squad_photo, ""];
+      PLANTELES[i] = [pl[0], pl[1], t.squad_photo, t.squad_caption || pl[3] || ""];
+    }
+    if (t.is_dissolved && DISUELTOS.indexOf(t.name) < 0) DISUELTOS.push(t.name);
+  });
+  (data.tournaments || []).forEach(function (t) {
+    var row = null;
+    CAMPEONES.forEach(function (c) {
+      if (row) return;
+      if (c.n != null && t.official_number != null && c.n === t.official_number) row = c;
+      else if (c.t === t.label) row = c;
+    });
+    if (row) {
+      if (t.champion) row.c = t.champion;
+      if (t.runner_up) row.s = t.runner_up;
+      if (t.photo) {
+        var fo = FOTOS[row.t] || [1400, 933, t.photo, t.thumb || t.photo];
+        FOTOS[row.t] = [fo[0], fo[1], t.photo, t.thumb || fo[3] || t.photo];
+      }
+    } else if (t.photo && t.label) {
+      FOTOS[t.label] = [1400, 933, t.photo, t.thumb || t.photo];
+    }
+  });
+  (data.players || []).forEach(function (p) {
+    var team = null;
+    data.teams.forEach(function (t) { if (t.id === p.team_id) team = t; });
+    var idx = p.source_index;
+    if (idx >= 0 && idx < JUGADORES.length) {
+      if (team && team.source_index != null) JUGADORES[idx][0] = team.source_index;
+      JUGADORES[idx][1] = p.full_name;
+      JUGADORES[idx][2] = p.matches_played;
+      JUGADORES[idx][3] = p.goals;
+      JUGADORES[idx][4] = p.yellows;
+      JUGADORES[idx][5] = p.reds;
+      JUGADORES[idx][6] = p.motm;
+      JUGADORES[idx].ligaId = p.id;
+      JUGADORES[idx].otros = p.other_teams || [];
+    }
+  });
+  function ensureFecha(n, dia) {
+    var fe = null;
+    FECHAS.forEach(function (f) { if (f.n === n) fe = f; });
+    if (fe) {
+      if (dia) fe.dia = dia;
+      return fe;
+    }
+    fe = { n: n, dia: dia || null, p: [] };
+    FECHAS.push(fe);
+    FECHAS.sort(function (a, b) { return a.n - b.n; });
+    return fe;
+  }
+  (data.matchdays || []).forEach(function (md) {
+    ensureFecha(md.number, md.played_on);
+  });
+  if (data.season && data.season.second_round_from) RUEDA2_DESDE = data.season.second_round_from;
+  (data.matches || []).forEach(function (m) {
+    var h = null, a = null;
+    (data.teams || []).forEach(function (t) {
+      if (t.id === m.home_team_id) h = t.source_index;
+      if (t.id === m.away_team_id) a = t.source_index;
+    });
+    if (h == null || a == null) return;
+    var hora = m.kickoff_time ? String(m.kickoff_time).slice(0, 5) : null;
+    var cancha = m.pitch || "";
+    var tiene = m.status !== "scheduled" && m.home_goals != null && m.away_goals != null;
+    var gl = tiene ? m.home_goals : null;
+    var gv = tiene ? m.away_goals : null;
+    var clave = m.matchday_number + ":" + h + ":" + a;
+    var fe = ensureFecha(m.matchday_number, null);
+    var found = false;
+    fe.p.forEach(function (g) {
+      if (g[2] !== h || g[3] !== a) return;
+      found = true;
+      if (hora) g[0] = hora;
+      if (cancha) g[1] = cancha;
+      g[4] = gl;
+      g[5] = gv;
+      g.live = !!m.live;
+    });
+    if (!found) {
+      var row = [hora || "", cancha, h, a, gl, gv];
+      row.live = !!m.live;
+      fe.p.push(row);
+    }
+    FALTAN.forEach(function (f) {
+      if (f.n !== m.matchday_number) return;
+      f.p.forEach(function (g) {
+        if (g[1] !== h || g[2] !== a) return;
+        if (hora) g[0] = hora;
+      });
+    });
+    if (m.sheet && (m.sheet.home.length || m.sheet.away.length)) {
+      PLANILLAS[clave] = [m.sheet.home, m.sheet.away];
+    }
+    if (m.motm_source_index != null) ESTRELLAS[clave] = m.motm_source_index;
+  });
+  var maxPlayed = 0;
+  FECHAS.forEach(function (f) {
+    f.p.forEach(function (g) {
+      if (g[4] != null && g[5] != null && f.n > maxPlayed) maxPlayed = f.n;
+    });
+  });
+  if (maxPlayed) ULTIMA = Math.max(ULTIMA, maxPlayed);
+  if (data.sanctions && data.sanctions.length) {
+    SANCIONES = data.sanctions
+      .filter(function (s) { return s.player_source_index != null; })
+      .map(function (s) { return [s.player_source_index, s.detail, s.sanction]; });
+  }
+  (data.content || []).forEach(function (c) {
+    if (c.slug === "home_subtitle" && c.title) {
+      var ligaEl = document.querySelector(".liga");
+      if (ligaEl) ligaEl.textContent = c.title;
+    }
+    if (c.slug === "construction_banner") {
+      var obra = document.querySelector(".obra");
+      if (obra) {
+        if (c.title) obra.textContent = c.title;
+        obra.hidden = c.is_visible === false;
+      }
+    }
+    if (c.slug === "footer_source" && c.body) {
+      var src = document.getElementById("pie-fuente");
+      if (src) src.textContent = c.body;
+    }
+    if (c.slug === "sanctions_note" && c.body) {
+      var sn = document.querySelector(".sanciones .nota");
+      if (sn) sn.textContent = c.body;
+    }
+  });
+  if (data.history && data.history.length) {
+    var art = document.querySelector(".historia-liga");
+    if (art) {
+      var ps = art.querySelectorAll("p");
+      data.history.forEach(function (h, i) {
+        if (!ps[i] || !h.body) return;
+        ps[i].textContent = h.body;
+        ps[i].className = h.is_lead ? "entrada" : "";
+      });
+    }
+  }
+  try { document.dispatchEvent(new Event("liga-lista")); } catch (err) {}
+}
+function cargarLiga() {
+  return fetch("/api/public/liga", { cache: "no-store" }).then(function (r) {
+    if (!r.ok) return;
+    return r.json().then(aplicarLiga);
+  }).catch(function () {});
+}
+function plantelLive(i) {
+  var todos = plantel(i).slice();
+  if (!LIGA || !LIGA.players) return todos;
+  var team = null;
+  LIGA.teams.forEach(function (t) { if (t.source_index === i) team = t; });
+  if (!team) return todos;
+  var have = {};
+  todos.forEach(function (j) { have[j[1].toLowerCase()] = true; });
+  LIGA.players.forEach(function (p) {
+    if (p.team_id !== team.id) return;
+    if (p.source_index < JUGADORES.length) return;
+    if (have[p.full_name.toLowerCase()]) return;
+    var row = [i, p.full_name, p.matches_played, p.goals, p.yellows, p.reds, p.motm];
+    row.ligaId = p.id;
+    row.otros = p.other_teams || [];
+    todos.push(row);
+    have[p.full_name.toLowerCase()] = true;
+  });
+  return todos;
+}
+
 // Títulos y subcampeonatos por equipo, contados desde el historial.
 // Devuelve los equipos con al menos un título, ordenados por títulos; los empatados comparten lugar.
 function palmares() {
@@ -2865,7 +3208,7 @@ if (typeof document !== "undefined") (function () {
         else { cl += " empata"; cv += " empata"; }
       } else { cl += " empata"; cv += " empata"; }
       m.appendChild(equipoMarcador(g[2], cl, true));
-      var gol = el("span", "goles");
+      var gol = el("span", "goles" + (g.live ? " en-vivo" : ""));
       if (jugado) gol.textContent = g[4] + " - " + g[5];
       else gol.appendChild(programado ? el("span", "porjugar", "Por jugar") : el("span", "pendiente", "Pendiente"));
       m.appendChild(gol);
@@ -3372,10 +3715,34 @@ if (typeof document !== "undefined") (function () {
       h.subs.length ? h.subs.join(", ") : "No ha sido subcampeón");
 
     // Fotos de sus títulos, de la más antigua a la más nueva
-    var fotos = fotosDe(EQUIPOS[i]), ul = $("eq-fotos");
+    var fotos = fotosDe(EQUIPOS[i]), ul = $("eq-fotos"), tabs = $("eq-camp-tabs");
+    var marco = $("eq-camp-marco"), imgG = $("eq-camp-img"), pie = $("eq-camp-pie");
     ul.textContent = "";
+    tabs.textContent = "";
     $("eq-fotos-caja").hidden = fotos.length === 0;
-    fotos.forEach(function (f) {
+    marco.hidden = fotos.length === 0;
+    function verCamp(f) {
+      Array.prototype.forEach.call(tabs.querySelectorAll("button"), function (b) {
+        b.setAttribute("aria-selected", b.getAttribute("data-t") === f.t ? "true" : "false");
+      });
+      imgG.src = rutaFoto(f.t, false);
+      imgG.alt = "Campeón " + f.t;
+      pie.textContent = f.t + (f.c ? " · " + f.c : "");
+    }
+    fotos.forEach(function (f, n) {
+      var tab = el("button");
+      tab.type = "button";
+      tab.setAttribute("role", "tab");
+      tab.setAttribute("data-t", f.t);
+      tab.setAttribute("aria-selected", n === 0 ? "true" : "false");
+      var tim = el("img");
+      tim.alt = "";
+      tim.loading = "lazy";
+      tim.src = rutaFoto(f.t, true);
+      tab.appendChild(tim);
+      tab.appendChild(el("span", "", f.t));
+      tab.addEventListener("click", function () { verCamp(f); });
+      tabs.appendChild(tab);
       var li = el("li"), b = el("button"), im = el("img");
       b.type = "button";
       b.setAttribute("aria-label", "Ver la foto del campeón " + f.t);
@@ -3387,6 +3754,7 @@ if (typeof document !== "undefined") (function () {
       b.addEventListener("click", function () { abrirFoto(fotos, f.t); });
       li.appendChild(b);
       ul.appendChild(li);
+      if (n === 0) verCamp(f);
     });
     var faltan = h.titulos.filter(function (t) { return !FOTOS[t]; }), nota = $("eq-fotos-nota");
     nota.hidden = faltan.length === 0;
@@ -3395,9 +3763,11 @@ if (typeof document !== "undefined") (function () {
   }
 
   function pintarPlantel() {
-    var todos = plantel(equipo);
+    var todos = plantelLive(equipo);
     var conPartidos = todos.filter(function (j) { return j[2] > 0; });
+    var q = ($("eq-buscar").value || "").trim().toLowerCase();
     var lista = ($("solo").checked ? conPartidos : todos).slice();
+    if (q) lista = lista.filter(function (j) { return j[1].toLowerCase().indexOf(q) >= 0; });
     var k = orden.k, s = orden.asc ? 1 : -1;
     lista.sort(function (a, b) {
       var d = k === 1 ? a[1].localeCompare(b[1], "es") * s : (a[k] - b[k]) * s;
@@ -3407,7 +3777,12 @@ if (typeof document !== "undefined") (function () {
     var tb = $("eq-jugadores");
     tb.textContent = "";
     lista.forEach(function (j) {
-      var tr = el("tr");
+      var tr = el("tr", "eq-jrow");
+      tr.tabIndex = 0;
+      tr.addEventListener("click", function () { abrirJugador(j); });
+      tr.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); abrirJugador(j); }
+      });
       tr.appendChild(el("td", "eq" + (j[2] === 0 ? " sinjugar" : ""), j[1]));
       [2, 3, 4, 5, 6].forEach(function (c) {
         tr.appendChild(el("td", (c === 6 ? "fin " : "") + (j[c] === 0 ? "cero" : ""), String(j[c])));
@@ -3441,6 +3816,19 @@ if (typeof document !== "undefined") (function () {
     FINAL.forEach(function (x, k) { if (x.i === i) { pos = k + 1; r = x; } });
     $("eq-titulo").textContent = EQUIPOS[i];
     $("eq-logo").src = LOGOS[i][2];
+    var chips = $("eq-chips");
+    chips.textContent = "";
+    function chip(txt) { chips.appendChild(el("span", "eq-chip", txt)); }
+    chip(pos + ".º");
+    if (LIGA && LIGA.teams) {
+      var live = null;
+      LIGA.teams.forEach(function (t) { if (t.source_index === i) live = t; });
+      if (live) {
+        if (live.is_founding_team) chip("Fundador");
+        if (live.is_dissolved) chip("Disuelto");
+        if (live.titles) chip(live.titles === 1 ? "1 título" : live.titles + " títulos");
+      }
+    }
     $("eq-resumen").textContent =
       pos + ".º de la tabla con " + r.pts + (r.pts === 1 ? " punto" : " puntos") + ". Jugó " + r.pj +
       (r.pj === 1 ? " partido" : " partidos") + ": ganó " + r.pg + ", empató " + r.pe + " y perdió " + r.pp +
@@ -3465,6 +3853,47 @@ if (typeof document !== "undefined") (function () {
     });
   });
   $("solo").addEventListener("change", pintarPlantel);
+  $("eq-buscar").addEventListener("input", pintarPlantel);
+
+  var dlgJ = $("eq-jug");
+  function abrirJugador(j) {
+    $("ej-nombre").textContent = j[1];
+    $("ej-meta").textContent = EQUIPOS[j[0]];
+    var kpis = $("ej-kpis");
+    kpis.textContent = "";
+    [["PJ", j[2]], ["Goles", j[3]], ["TA", j[4]], ["TR", j[5]], ["★", j[6] || 0]].forEach(function (x) {
+      var d = el("div");
+      d.appendChild(el("b", "", String(x[1])));
+      d.appendChild(el("span", "", x[0]));
+      kpis.appendChild(d);
+    });
+    var otros = j.otros || [];
+    if (!otros.length && LIGA && LIGA.players) {
+      LIGA.players.forEach(function (p) {
+        if (p.full_name === j[1] && (j.ligaId ? p.id === j.ligaId : p.source_index === JUGADORES.indexOf(j))) {
+          otros = p.other_teams || [];
+        }
+      });
+    }
+    $("ej-otros-tit").hidden = otros.length === 0;
+    var caja = $("ej-clubes");
+    caja.textContent = "";
+    otros.forEach(function (c) {
+      var b = el("button");
+      b.type = "button";
+      b.textContent = c.name;
+      b.addEventListener("click", function () {
+        dlgJ.close();
+        var idx = EQUIPOS.indexOf(c.name);
+        if (LIGA) LIGA.teams.forEach(function (t) { if (t.id === c.id && t.source_index != null) idx = t.source_index; });
+        if (idx >= 0) irEquipo(idx);
+      });
+      caja.appendChild(b);
+    });
+    if (dlgJ.showModal && !dlgJ.open) dlgJ.showModal();
+  }
+  $("ej-cerrar").addEventListener("click", function () { dlgJ.close(); });
+  dlgJ.addEventListener("click", function (e) { if (e.target === dlgJ) dlgJ.close(); });
 
   // ---------- Goleadores y tarjetas ----------
   var CORTE = 15;
@@ -3485,6 +3914,7 @@ if (typeof document !== "undefined") (function () {
     var boton = $(idBoton), tb = $(idCuerpo);
 
     function pintar() {
+      lista = ranking(k);
       tb.textContent = "";
       lista.slice(0, abierto ? lista.length : corte).forEach(function (x) {
         var tr = el("tr");
@@ -3515,21 +3945,29 @@ if (typeof document !== "undefined") (function () {
       boton.textContent = abierto ? (minimo ? "Ver solo los de " + minimo + " o más" : "Ver solo los primeros " + corte) : "Ver los " + lista.length + " " + plural;
     }
     boton.addEventListener("click", function () { abierto = !abierto; pintar(); });
+    document.addEventListener("liga-lista", pintar);
     pintar();
     return lista;
   }
 
-  // Suspendidos, en el orden de la tabla de la liga
-  SANCIONES.forEach(function (x) {
-    var j = JUGADORES[x[0]], tr = el("tr");
+  function pintarSanciones() {
+    var tb = $("li-sanciones");
+    tb.textContent = "";
+    SANCIONES.forEach(function (x) {
+    var j = JUGADORES[x[0]];
+    if (!j) return;
+    var tr = el("tr");
     var td = el("td", "eq"), d = el("div", "con-logo"), txt = el("span", "", j[1]);
     txt.appendChild(el("small", "", EQUIPOS[j[0]]));
     d.appendChild(logo(j[0], "chico")); d.appendChild(txt); td.appendChild(d);
     tr.appendChild(td);
     tr.appendChild(el("td", "eq detalle", x[1]));
     tr.appendChild(el("td", "fin sancion", x[2]));
-    $("li-sanciones").appendChild(tr);
-  });
+    tb.appendChild(tr);
+    });
+  }
+  pintarSanciones();
+  document.addEventListener("liga-lista", pintarSanciones);
 
   var goleadores = montarRanking(3, "li-goles", "mas-goles", "goleadores", 2);
   var amonestados = montarRanking(4, "li-amarillas", "mas-amarillas", "jugadores con amarilla");
@@ -3546,11 +3984,13 @@ if (typeof document !== "undefined") (function () {
     : "";
 
   // ---------- Fair Play ----------
-  (function () {
+  function pintarFairPlay() {
+    FINAL = tablaHasta(ULTIMA);
     var lista = FINAL.slice().sort(function (a, b) {
       return (b.fp - a.fp) || a.nombre.localeCompare(b.nombre, "es");
     });
     var tb = $("fa-cuerpo"), pos = 0, empatados = [];
+    tb.textContent = "";
     lista.forEach(function (r, k) {
       if (k === 0 || r.fp !== lista[k - 1].fp) pos = k + 1;
       else {
@@ -3575,7 +4015,9 @@ if (typeof document !== "undefined") (function () {
       ? "Los equipos con el mismo puntaje comparten lugar."
       : "";
     $("fa-empates").hidden = !empatados.length;
-  })();
+  }
+  pintarFairPlay();
+  document.addEventListener("liga-lista", pintarFairPlay);
 
   // ---------- Simulador ----------
   // Trabaja con una copia: pasa los resultados escritos como partidos "extra" a tablaHasta,
@@ -4009,7 +4451,7 @@ if (typeof document !== "undefined") (function () {
       if (d) { pasarFoto(d); e.preventDefault(); }
       return;
     }
-    if (ficha.open) return;
+    if (ficha.open || dlgJ.open) return;
     var paso = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
     if (!paso) return;
     if (vista === "fecha") { ir(actual + paso); e.preventDefault(); }
@@ -4022,10 +4464,23 @@ if (typeof document !== "undefined") (function () {
 
   ir(ULTIMA);   // al abrir, la última fecha con resultados
   irEquipo(equipo);
+  cargarLiga().then(function () {
+    ORDEN.forEach(function (i) {
+      var b = fichas[i];
+      if (!b) return;
+      var nom = b.querySelector("span");
+      if (nom) nom.textContent = EQUIPOS[i];
+      var im = b.querySelector("img");
+      if (im && LOGOS[i]) im.src = LOGOS[i][2];
+    });
+    ir(actual);
+    irEquipo(equipo);
+  });
 
   $("ir-home").addEventListener("click", function (e) {
     e.preventDefault();
     if (ficha.open) cerrarFicha();
+    if (dlgJ.open) dlgJ.close();
     if (visor.open) cerrarFoto();
     verVista("fecha");
     ir(ULTIMA);
