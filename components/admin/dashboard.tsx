@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useAdminData } from "@/components/admin/store";
+import { useRouter } from "next/navigation";
+import { bindRow, useAdminData } from "@/components/admin/store";
 
 function statusOf(row: Record<string, unknown>) {
   return String(row.status ?? "");
 }
 
 export function Dashboard() {
-  const { data, loading, error } = useAdminData();
+  const { data, loading, error, openTeam } = useAdminData();
+  const router = useRouter();
   if (loading) return <p className="adm-load">Cargando escritorio…</p>;
   if (error || !data) return <p className="adm-alert">{error ?? "Sin datos"}</p>;
 
@@ -26,7 +28,8 @@ export function Dashboard() {
   const played = calendar.filter((m) => m.status === "played");
   const open = calendar.filter((m) => m.status !== "played");
   const goals = played.reduce((s, m) => s + (m.home_goals ?? 0) + (m.away_goals ?? 0), 0);
-  const standings = data.standings as { pos: number; team_name: string; pts: number; pj: number; dg: number }[];
+  const standings = data.standings as { pos: number; team_id?: number; team_name: string; pts: number; pj: number; dg: number }[];
+  const teamIds = data.teams.map((t) => t.id);
   const inbox = open.slice(0, 8);
 
   return (
@@ -75,21 +78,22 @@ export function Dashboard() {
                 <th>Fecha</th>
                 <th>Partido</th>
                 <th>Estado</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
               {inbox.map((m) => (
-                <tr key={m.match_id}>
+                <tr
+                  key={m.match_id}
+                  {...bindRow(() => router.push(`/admin/partidos/${m.match_id}`), {
+                    label: `${m.home_team} — ${m.away_team}`,
+                  })}
+                >
                   <td>{m.matchday_number}</td>
                   <td>
                     {m.home_team} — {m.away_team}
                   </td>
                   <td>
                     <span className={`adm-pill ${statusOf(m)}`}>{m.status}</span>
-                  </td>
-                  <td>
-                    <Link href={`/admin/partidos/${m.match_id}`}>Cargar</Link>
                   </td>
                 </tr>
               ))}
@@ -108,14 +112,20 @@ export function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {standings.map((r) => (
-                <tr key={r.team_name}>
-                  <td>{r.pos}</td>
-                  <td>{r.team_name}</td>
-                  <td>{r.pts}</td>
-                  <td>{r.pj}</td>
-                </tr>
-              ))}
+              {standings.map((r) => {
+                const id = r.team_id ?? data.teams.find((t) => t.name === r.team_name)?.id;
+                return (
+                  <tr
+                    key={r.team_name}
+                    {...(id != null ? bindRow(() => openTeam(id, teamIds), { label: r.team_name }) : {})}
+                  >
+                    <td>{r.pos}</td>
+                    <td>{r.team_name}</td>
+                    <td>{r.pts}</td>
+                    <td>{r.pj}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </section>

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { deleteSanction, getSanctionsInbox, saveSanction, saveSiteContent, syncSanctionCalendar } from "@/app/admin/actions";
-import { IconChevL, IconClose, IconEdit } from "@/components/admin/icons";
+import { IconChevL, IconClose } from "@/components/admin/icons";
 import { useAdminData } from "@/components/admin/store";
 import {
   TEMPLATES,
@@ -42,7 +42,7 @@ function loadDraft() {
 }
 
 export function SanctionsDesk() {
-  const { data, loading, error, reload, openPlayer } = useAdminData();
+  const { data, loading, error, reload } = useAdminData();
   const [tab, setTab] = useState<Tab>("now");
   const [q, setQ] = useState("");
   const [team, setTeam] = useState("all");
@@ -134,7 +134,6 @@ export function SanctionsDesk() {
 
   const active = views.filter((v) => v.active);
   const hist = views.filter((v) => !v.active);
-  const ids = (tab === "hist" ? hist : active).map((v) => v.playerId);
 
   const filtered = useMemo(() => {
     const src = tab === "hist" ? hist : active;
@@ -388,7 +387,37 @@ export function SanctionsDesk() {
             <div className="sn-inbox">
               {inbox.length === 0 ? <p className="sn-empty">Nada pendiente de publicar</p> : null}
               {inbox.map((item) => (
-                <div className="sn-row" key={item.key}>
+                <div
+                  className="sn-row"
+                  key={item.key}
+                  tabIndex={0}
+                  aria-label={item.player_name}
+                  onClick={() => {
+                    setTab("now");
+                    setPlayer(String(item.player_id));
+                    setPq(item.player_name);
+                    setKind(item.kind);
+                    setDuration(1);
+                    setDetail(item.detail);
+                    setSanction("1 fecha");
+                    setOrigin(String(item.matchday));
+                    setStarts(String(item.matchday + 1));
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setTab("now");
+                      setPlayer(String(item.player_id));
+                      setPq(item.player_name);
+                      setKind(item.kind);
+                      setDuration(1);
+                      setDetail(item.detail);
+                      setSanction("1 fecha");
+                      setOrigin(String(item.matchday));
+                      setStarts(String(item.matchday + 1));
+                    }
+                  }}
+                >
                   <div className="sn-id">
                     <strong>{item.player_name}</strong>
                     <span>
@@ -397,23 +426,6 @@ export function SanctionsDesk() {
                   </div>
                   <div className="sn-meta">
                     <span className="adm-pill">{kindLabel(item.kind)}</span>
-                    <button
-                      className="adm-btn"
-                      type="button"
-                      onClick={() => {
-                        setTab("now");
-                        setPlayer(String(item.player_id));
-                        setPq(item.player_name);
-                        setKind(item.kind);
-                        setDuration(item.kind === "yellow_accum" ? 1 : 1);
-                        setDetail(item.detail);
-                        setSanction("1 fecha");
-                        setOrigin(String(item.matchday));
-                        setStarts(String(item.matchday + 1));
-                      }}
-                    >
-                      Cargar
-                    </button>
                   </div>
                 </div>
               ))}
@@ -428,17 +440,18 @@ export function SanctionsDesk() {
                   {rows.map((v) => (
                     <article
                       key={v.id}
-                      className={`sn-row${selected === v.id ? " on" : ""}${v.voided ? " voided" : ""}`}
+                      className={`sn-row${selected === v.id || editId === v.id ? " on" : ""}${v.voided ? " voided" : ""}`}
                       tabIndex={0}
+                      aria-label={v.playerName}
                       onClick={() => {
                         setSelected(v.id);
-                        if (v.playerId) openPlayer(v.playerId, ids);
+                        fillFrom(v);
                       }}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
                           setSelected(v.id);
-                          if (v.playerId) openPlayer(v.playerId, ids);
+                          fillFrom(v);
                         }
                       }}
                     >
@@ -459,9 +472,6 @@ export function SanctionsDesk() {
                           ))}
                         </span>
                         <div className="sn-actions" onClick={(event) => event.stopPropagation()}>
-                          <button className="adm-iconbtn" type="button" title="Editar" aria-label="Editar" onClick={() => fillFrom(v)}>
-                            <IconEdit />
-                          </button>
                           {v.voided ? (
                             <button className="adm-iconbtn" type="button" title="Restaurar" aria-label="Restaurar" onClick={() => restaurar(v.id)}>
                               <IconChevL />

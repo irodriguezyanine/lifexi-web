@@ -122,6 +122,11 @@ export type DossierStint = {
   current: boolean;
 };
 
+export type PlayerShot = {
+  src: string;
+  caption: string;
+};
+
 export type PlayerDossier = {
   player: {
     id: number;
@@ -129,7 +134,14 @@ export type PlayerDossier = {
     team_id: number;
     source_index: number;
     season_id: number;
+    nick: string;
+    bio: string;
+    number: string;
+    position: string;
+    photo: string | null;
+    photos: PlayerShot[];
   };
+  teams: { id: number; name: string }[];
   team: {
     id: number;
     name: string;

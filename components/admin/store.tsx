@@ -1,9 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type KeyboardEvent } from "react";
-import { useRouter } from "next/navigation";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent } from "react";
 import { listDirectory } from "@/app/admin/actions";
 import { PlayerDossierModal } from "@/components/admin/player-dossier";
+import { TeamDossierModal } from "@/components/admin/team-dossier";
 import "@/app/admin/player-dossier.css";
 
 type Directory = Record<string, unknown> & {
@@ -34,32 +34,48 @@ const Ctx = createContext<{
   reload: () => Promise<void>;
   openPlayer: (id: number, listIds?: number[]) => void;
   closePlayer: () => void;
+  openTeam: (id: number, listIds?: number[]) => void;
+  closeTeam: () => void;
 } | null>(null);
+
+function isRowControl(target: EventTarget | null, current?: EventTarget | null) {
+  if (!target || target === current) return false;
+  return Boolean((target as HTMLElement).closest("a, button, input, select, textarea, label"));
+}
+
+export function bindRow(onOpen: () => void, opts?: { className?: string; selected?: boolean; label?: string }) {
+  return {
+    className: [opts?.className ?? "pd-row", opts?.selected ? "on" : ""].filter(Boolean).join(" "),
+    tabIndex: 0 as const,
+    ...(opts?.label ? { "aria-label": opts.label } : {}),
+    onClick: (event: MouseEvent<HTMLElement>) => {
+      if (isRowControl(event.target, event.currentTarget)) return;
+      onOpen();
+    },
+    onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+      if (isRowControl(event.target, event.currentTarget)) return;
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onOpen();
+      }
+    },
+  };
+}
 
 export function bindPlayerRow(
   id: number,
   listIds: number[],
   openPlayer: (id: number, listIds?: number[]) => void,
 ) {
-  return {
-    className: "pd-row",
-    tabIndex: 0 as const,
-    onClick: () => openPlayer(id, listIds),
-    onKeyDown: (event: KeyboardEvent) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        openPlayer(id, listIds);
-      }
-    },
-  };
+  return bindRow(() => openPlayer(id, listIds));
 }
 
 export function AdminStore({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const [data, setData] = useState<Directory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [peek, setPeek] = useState<{ id: number; listIds: number[] } | null>(null);
+  const [teamPeek, setTeamPeek] = useState<{ id: number; listIds: number[] } | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -88,24 +104,41 @@ export function AdminStore({ children }: { children: React.ReactNode }) {
 
   const closePlayer = useCallback(() => setPeek(null), []);
 
+  const openTeam = useCallback(
+    (id: number, listIds?: number[]) => {
+      const fallback = data?.teams.map((t) => t.id) ?? [id];
+      setTeamPeek({ id, listIds: listIds?.length ? listIds : fallback });
+    },
+    [data],
+  );
+
+  const closeTeam = useCallback(() => setTeamPeek(null), []);
+
   const value = useMemo(
-    () => ({ data, loading, error, reload, openPlayer, closePlayer }),
-    [data, loading, error, reload, openPlayer, closePlayer],
+    () => ({ data, loading, error, reload, openPlayer, closePlayer, openTeam, closeTeam }),
+    [data, loading, error, reload, openPlayer, closePlayer, openTeam, closeTeam],
   );
   return (
     <Ctx.Provider value={value}>
       {children}
+      {teamPeek ? (
+        <TeamDossierModal
+          teamId={teamPeek.id}
+          listIds={teamPeek.listIds}
+          onClose={closeTeam}
+          onOpen={(id) => setTeamPeek((cur) => (cur ? { ...cur, id } : { id, listIds: [id] }))}
+          onOpenPlayer={openPlayer}
+          onSaved={() => void reload()}
+        />
+      ) : null}
       {peek ? (
         <PlayerDossierModal
           playerId={peek.id}
           listIds={peek.listIds}
           onClose={closePlayer}
           onOpen={(id) => setPeek((cur) => (cur ? { ...cur, id } : { id, listIds: [id] }))}
-          onEdit={() => {
-            const id = peek.id;
-            closePlayer();
-            router.push(`/admin/jugadores?id=${id}`);
-          }}
+          onOpenTeam={openTeam}
+          onSaved={() => void reload()}
         />
       ) : null}
     </Ctx.Provider>

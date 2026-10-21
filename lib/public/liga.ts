@@ -37,6 +37,12 @@ export type PublicLiga = {
     full_name: string;
     team_id: number;
     source_index: number;
+    nick: string | null;
+    bio: string | null;
+    number: string | null;
+    position: string | null;
+    photo: string | null;
+    photos: { src: string; caption: string | null }[];
     matches_played: number;
     goals: number;
     yellows: number;
@@ -188,6 +194,21 @@ export async function getPublicLiga(): Promise<PublicLiga> {
     }
   }
 
+  const playerProfilesEntry = ((contentRes.data ?? []) as { slug: string; extra?: unknown; body?: string | null }[]).find((c) => c.slug === "player_profiles");
+  let playerProfiles: Record<string, { nick?: string; bio?: string; number?: string; position?: string; photo?: string | null; photos?: { src: string; caption?: string }[] }> = {};
+  if (playerProfilesEntry?.extra && typeof playerProfilesEntry.extra === "object" && !Array.isArray(playerProfilesEntry.extra)) {
+    playerProfiles = playerProfilesEntry.extra as typeof playerProfiles;
+  } else if (playerProfilesEntry?.body) {
+    try {
+      const parsed = JSON.parse(playerProfilesEntry.body) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        playerProfiles = parsed as typeof playerProfiles;
+      }
+    } catch {
+      playerProfiles = {};
+    }
+  }
+
   const stats = (statsRes.data ?? []) as {
     player_id: number;
     matches_played: number;
@@ -306,11 +327,19 @@ export async function getPublicLiga(): Promise<PublicLiga> {
     players: playersRaw.map((row) => {
       const st = statsById.get(row.id);
       const twins = (byName.get(row.full_name) ?? []).filter((item) => item.id !== row.id && item.team_id !== row.team_id);
+      const profile = playerProfiles[String(row.id)] ?? {};
+      const shots = (profile.photos ?? []).filter((shot) => shot.src).map((shot) => ({ src: shot.src, caption: shot.caption?.trim() || null }));
       return {
         id: row.id,
         full_name: row.full_name,
         team_id: row.team_id,
         source_index: row.source_index,
+        nick: profile.nick?.trim() || null,
+        bio: profile.bio?.trim() || null,
+        number: profile.number?.trim() || null,
+        position: profile.position?.trim() || null,
+        photo: profile.photo?.trim() || shots[0]?.src || null,
+        photos: shots,
         matches_played: st?.matches_played ?? 0,
         goals: st?.goals ?? 0,
         yellows: st?.yellows ?? 0,
@@ -421,7 +450,7 @@ export async function getPublicLiga(): Promise<PublicLiga> {
       sort_order: row.sort_order,
     })),
     content: ((contentRes.data ?? []) as { slug: string; title: string | null; body: string | null; is_visible: boolean }[])
-      .filter((row) => row.slug !== "sanctions_ledger" && row.slug !== "team_profiles")
+      .filter((row) => row.slug !== "sanctions_ledger" && row.slug !== "team_profiles" && row.slug !== "player_profiles")
       .map((row) => ({
       slug: row.slug,
       title: row.title,

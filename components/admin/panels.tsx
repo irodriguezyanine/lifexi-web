@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import {
@@ -8,15 +7,15 @@ import {
   saveHistoryEntry,
   saveMatchday,
   saveMediaCaption,
-  savePlayer,
   saveSeason,
   saveSiteContent,
   saveTeam,
   saveTournament,
 } from "@/app/admin/actions";
-import { PlayerDossierModal } from "@/components/admin/player-dossier";
+import { PlayerCreateDialog, PlayerDossierModal } from "@/components/admin/player-dossier";
+import { IconPlus } from "@/components/admin/icons";
 import { TeamDossierModal } from "@/components/admin/team-dossier";
-import { bindPlayerRow, useAdminData } from "@/components/admin/store";
+import { bindPlayerRow, bindRow, useAdminData } from "@/components/admin/store";
 import type { TeamRow } from "@/lib/admin/types";
 
 function teamName(teams: { id: number; name: string }[], id: number) {
@@ -25,6 +24,9 @@ function teamName(teams: { id: number; name: string }[], id: number) {
 
 export function MatchesPanel() {
   const { data, loading, error } = useAdminData();
+  const router = useRouter();
+  const params = useSearchParams();
+  const fecha = params.get("fecha");
   const [q, setQ] = useState("");
   const [st, setSt] = useState("all");
   if (loading) return <p className="adm-load">Cargando…</p>;
@@ -43,6 +45,7 @@ export function MatchesPanel() {
     const hay = `${m.home_team} ${m.away_team} ${m.matchday_number}`.toLowerCase();
     if (q && !hay.includes(q.toLowerCase())) return false;
     if (st !== "all" && m.status !== st) return false;
+    if (fecha && String(m.matchday_number) !== fecha) return false;
     return true;
   });
   return (
@@ -67,12 +70,16 @@ export function MatchesPanel() {
               <th>Partido</th>
               <th>Marcador</th>
               <th>Estado</th>
-              <th></th>
             </tr>
           </thead>
           <tbody>
             {rows.map((m) => (
-              <tr key={m.match_id}>
+              <tr
+                key={m.match_id}
+                {...bindRow(() => router.push(`/admin/partidos/${m.match_id}`), {
+                  label: `${m.home_team} — ${m.away_team}`,
+                })}
+              >
                 <td>{m.matchday_number}</td>
                 <td>{m.played_on ?? "—"}</td>
                 <td>{m.kickoff_time?.slice(0, 5) ?? "—"}</td>
@@ -82,11 +89,6 @@ export function MatchesPanel() {
                 <td>{m.status === "played" ? `${m.home_goals}-${m.away_goals}` : "—"}</td>
                 <td>
                   <span className={`adm-pill ${m.status}`}>{m.status}</span>
-                </td>
-                <td>
-                  <Link href={`/admin/partidos/${m.match_id}`}>
-                    {m.status === "played" ? "Editar" : "Completar"}
-                  </Link>
                 </td>
               </tr>
             ))}
@@ -99,6 +101,7 @@ export function MatchesPanel() {
 
 export function DatesPanel() {
   const { data, loading, error, reload } = useAdminData();
+  const router = useRouter();
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [number, setNumber] = useState("");
@@ -124,12 +127,16 @@ export function DatesPanel() {
                 <th>Día</th>
                 <th>Rueda</th>
                 <th>Sitio</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
               {days.map((d) => (
-                <tr key={d.id}>
+                <tr
+                  key={d.id}
+                  {...bindRow(() => router.push(`/admin/partidos?fecha=${d.number}`), {
+                    label: `Fecha ${d.number}`,
+                  })}
+                >
                   <td>{d.number}</td>
                   <td>
                     <input
@@ -152,9 +159,6 @@ export function DatesPanel() {
                   </td>
                   <td>{d.round_number}</td>
                   <td>{d.league_site_number}</td>
-                  <td>
-                    <Link href={`/admin/partidos?fecha=${d.number}`}>Ver</Link>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -513,17 +517,13 @@ export function PlayersPanel() {
   const params = useSearchParams();
   const [q, setQ] = useState("");
   const [team, setTeam] = useState("all");
-  const [name, setName] = useState("");
-  const [teamId, setTeamId] = useState("");
-  const [editId, setEditId] = useState<number | null>(null);
+  const [creating, setCreating] = useState(false);
   const [openId, setOpenId] = useState<number | null>(() => {
     const raw = params.get("id");
     const n = raw ? Number(raw) : NaN;
     return Number.isFinite(n) ? n : null;
   });
   const [openTeam, setOpenTeam] = useState<number | null>(null);
-  const [pending, start] = useTransition();
-  const [msg, setMsg] = useState<string | null>(null);
 
   function openPlayer(id: number) {
     setOpenId(id);
@@ -550,11 +550,10 @@ export function PlayersPanel() {
   });
   return (
     <>
-      <Header title="Jugadores" note="Planteles del torneo. Los homónimos son fichas distintas." />
-      {msg ? <p className="adm-alert">{msg}</p> : null}
+      <Header title="Jugadores" note={`${rows.length} fichas`} />
       <div className="adm-toolbar">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" style={{ maxWidth: 240 }} />
-        <select value={team} onChange={(e) => setTeam(e.target.value)} style={{ maxWidth: 220 }}>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" aria-label="Buscar" style={{ maxWidth: 240 }} />
+        <select value={team} onChange={(e) => setTeam(e.target.value)} aria-label="Equipo" style={{ maxWidth: 220 }}>
           <option value="all">Todos</option>
           {data.teams.map((t) => (
             <option key={t.id} value={t.id}>
@@ -562,106 +561,61 @@ export function PlayersPanel() {
             </option>
           ))}
         </select>
+        <button className="pd-plus" type="button" title="Nuevo" aria-label="Nuevo" onClick={() => setCreating(true)}>
+          <IconPlus />
+        </button>
       </div>
-      <div className="adm-grid">
-        <section className="adm-card" style={{ overflow: "auto", maxHeight: "70vh" }}>
-          <table className="adm-table">
-            <thead>
-              <tr>
-                <th>Jugador</th>
-                <th>Equipo</th>
-                <th>PJ</th>
-                <th>G</th>
-                <th>TA</th>
-                <th>TR</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((p) => {
-                const s = stats.find((x) => x.player_id === p.id);
-                return (
-                  <tr
-                    key={p.id}
-                    className={openId === p.id ? "pd-row on" : "pd-row"}
-                    tabIndex={0}
-                    onClick={() => openPlayer(p.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        openPlayer(p.id);
-                      }
-                    }}
-                  >
-                    <td>{p.full_name}</td>
-                    <td>{teamName(data.teams, p.team_id)}</td>
-                    <td>{s?.matches_played ?? 0}</td>
-                    <td>{s?.goals ?? 0}</td>
-                    <td>{s?.yellows ?? 0}</td>
-                    <td>{s?.reds ?? 0}</td>
-                    <td>
-                      <button
-                        className="adm-btn ghost"
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setEditId(p.id);
-                          setName(p.full_name);
-                          setTeamId(String(p.team_id));
-                        }}
-                      >
-                        Editar
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </section>
-        <section className="adm-card">
-          <h2>{editId ? "Editar" : "Alta"}</h2>
-          <div className="adm-form">
-            <label>
-              Nombre
-              <input value={name} onChange={(e) => setName(e.target.value)} />
-            </label>
-            <label>
-              Equipo
-              <select value={teamId} onChange={(e) => setTeamId(e.target.value)}>
-                <option value="">Elegir</option>
-                {data.teams.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              className="adm-btn"
-              type="button"
-              disabled={pending}
-              onClick={() =>
-                start(async () => {
-                  const res = await savePlayer({
-                    id: editId ?? undefined,
-                    full_name: name,
-                    team_id: Number(teamId),
-                  });
-                  if (!res.ok) setMsg(res.error);
-                  else {
-                    setEditId(null);
-                    setName("");
-                    void reload();
-                  }
-                })
-              }
-            >
-              Guardar
-            </button>
-          </div>
-        </section>
-      </div>
+      <section className="adm-card" style={{ overflow: "auto", maxHeight: "70vh" }}>
+        <table className="adm-table">
+          <thead>
+            <tr>
+              <th>Jugador</th>
+              <th>Equipo</th>
+              <th>PJ</th>
+              <th>G</th>
+              <th>TA</th>
+              <th>TR</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((p) => {
+              const s = stats.find((x) => x.player_id === p.id);
+              return (
+                <tr
+                  key={p.id}
+                  className={openId === p.id ? "pd-row on" : "pd-row"}
+                  tabIndex={0}
+                  onClick={() => openPlayer(p.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openPlayer(p.id);
+                    }
+                  }}
+                >
+                  <td>{p.full_name}</td>
+                  <td>{teamName(data.teams, p.team_id)}</td>
+                  <td>{s?.matches_played ?? 0}</td>
+                  <td>{s?.goals ?? 0}</td>
+                  <td>{s?.yellows ?? 0}</td>
+                  <td>{s?.reds ?? 0}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </section>
+      {creating ? (
+        <PlayerCreateDialog
+          teams={data.teams}
+          onClose={() => setCreating(false)}
+          onCreated={(id) => {
+            setCreating(false);
+            void reload();
+            openPlayer(id);
+          }}
+        />
+      ) : null}
       {openTeam != null ? (
         <TeamDossierModal
           teamId={openTeam}
@@ -679,14 +633,7 @@ export function PlayersPanel() {
           onClose={closePlayer}
           onOpenTeam={setOpenTeam}
           onOpen={openPlayer}
-          onEdit={() => {
-            const p = data.players.find((x) => x.id === openId);
-            if (!p) return;
-            setEditId(p.id);
-            setName(p.full_name);
-            setTeamId(String(p.team_id));
-            closePlayer();
-          }}
+          onSaved={() => void reload()}
         />
       ) : null}
     </>
@@ -732,12 +679,21 @@ export function ScorersPanel() {
   );
 }
 
+function standingTeamId(
+  teams: { id: number; name: string }[],
+  row: { team_id?: number; team_name: string },
+) {
+  if (typeof row.team_id === "number") return row.team_id;
+  return teams.find((t) => t.name === row.team_name)?.id ?? null;
+}
+
 export function TablePanel() {
-  const { data, loading, error } = useAdminData();
+  const { data, loading, error, openTeam } = useAdminData();
   if (loading) return <p className="adm-load">Cargando…</p>;
   if (error || !data) return <p className="adm-alert">{error ?? "Sin datos"}</p>;
   const rows = data.standings as {
     pos: number;
+    team_id?: number;
     team_name: string;
     pj: number;
     pg: number;
@@ -749,6 +705,7 @@ export function TablePanel() {
     fp: number;
     pts: number;
   }[];
+  const ids = data.teams.map((t) => t.id);
   return (
     <>
       <Header title="Tabla" note="Puntos, DG, fair play y resultado directo. No se edita a mano." />
@@ -770,21 +727,29 @@ export function TablePanel() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.team_name}>
-                <td>{r.pos}</td>
-                <td>{r.team_name}</td>
-                <td>{r.pj}</td>
-                <td>{r.pg}</td>
-                <td>{r.pe}</td>
-                <td>{r.pp}</td>
-                <td>{r.gf}</td>
-                <td>{r.gc}</td>
-                <td>{r.dg}</td>
-                <td>{r.fp}</td>
-                <td>{r.pts}</td>
-              </tr>
-            ))}
+            {rows.map((r) => {
+              const id = standingTeamId(data.teams, r);
+              return (
+                <tr
+                  key={r.team_name}
+                  {...(id != null
+                    ? bindRow(() => openTeam(id, ids), { label: r.team_name })
+                    : {})}
+                >
+                  <td>{r.pos}</td>
+                  <td>{r.team_name}</td>
+                  <td>{r.pj}</td>
+                  <td>{r.pg}</td>
+                  <td>{r.pe}</td>
+                  <td>{r.pp}</td>
+                  <td>{r.gf}</td>
+                  <td>{r.gc}</td>
+                  <td>{r.dg}</td>
+                  <td>{r.fp}</td>
+                  <td>{r.pts}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </section>
@@ -793,12 +758,13 @@ export function TablePanel() {
 }
 
 export function FairPlayPanel() {
-  const { data, loading, error } = useAdminData();
+  const { data, loading, error, openTeam } = useAdminData();
   if (loading) return <p className="adm-load">Cargando…</p>;
   if (error || !data) return <p className="adm-alert">{error ?? "Sin datos"}</p>;
-  const rows = [...(data.standings as { team_name: string; ta: number; tr: number; fp: number }[])].sort(
-    (a, b) => b.fp - a.fp || a.team_name.localeCompare(b.team_name, "es"),
-  );
+  const rows = [
+    ...(data.standings as { team_id?: number; team_name: string; ta: number; tr: number; fp: number }[]),
+  ].sort((a, b) => b.fp - a.fp || a.team_name.localeCompare(b.team_name, "es"));
+  const ids = data.teams.map((t) => t.id);
   return (
     <>
       <Header title="Fair Play" note="−1 amarilla, −4 roja. Doble amarilla = solo roja." />
@@ -813,14 +779,22 @@ export function FairPlayPanel() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.team_name}>
-                <td>{r.team_name}</td>
-                <td>{r.ta}</td>
-                <td>{r.tr}</td>
-                <td>{r.fp}</td>
-              </tr>
-            ))}
+            {rows.map((r) => {
+              const id = standingTeamId(data.teams, r);
+              return (
+                <tr
+                  key={r.team_name}
+                  {...(id != null
+                    ? bindRow(() => openTeam(id, ids), { label: r.team_name })
+                    : {})}
+                >
+                  <td>{r.team_name}</td>
+                  <td>{r.ta}</td>
+                  <td>{r.tr}</td>
+                  <td>{r.fp}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </section>
@@ -861,30 +835,26 @@ export function ChampionsPanel() {
               <th>Torneo</th>
               <th>Campeón</th>
               <th>Sub</th>
-              <th></th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.id}>
+              <tr
+                key={r.id}
+                {...bindRow(
+                  () => {
+                    setLabel(r.label);
+                    setKind(r.kind);
+                    setChamp(r.champion_team_id ? String(r.champion_team_id) : "");
+                    setSub(r.runner_up_team_id ? String(r.runner_up_team_id) : "");
+                  },
+                  { selected: label === r.label, label: r.label },
+                )}
+              >
                 <td>{r.official_number ?? "—"}</td>
                 <td>{r.label}</td>
                 <td>{r.champion_team_id ? teamName(data.teams, r.champion_team_id) : "—"}</td>
                 <td>{r.runner_up_team_id ? teamName(data.teams, r.runner_up_team_id) : "—"}</td>
-                <td>
-                  <button
-                    className="adm-btn ghost"
-                    type="button"
-                    onClick={() => {
-                      setLabel(r.label);
-                      setKind(r.kind);
-                      setChamp(r.champion_team_id ? String(r.champion_team_id) : "");
-                      setSub(r.runner_up_team_id ? String(r.runner_up_team_id) : "");
-                    }}
-                  >
-                    Cargar
-                  </button>
-                </td>
               </tr>
             ))}
           </tbody>

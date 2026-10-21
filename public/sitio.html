@@ -395,7 +395,22 @@
     color: var(--ink);
     font: inherit;
   }
-  #eq-jug { width: min(28rem, calc(100vw - 1.5rem)); }
+  #eq-jug { width: min(36rem, calc(100vw - 1.5rem)); }
+  .ej-foto {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    object-position: top;
+    border-radius: 0.6rem;
+    margin: 0.7rem 0 0;
+    background: #111;
+  }
+  .ej-nick { margin: 0.3rem 0 0; color: var(--gold); font-weight: 700; }
+  .ej-bio { margin: 0.55rem 0 0; }
+  .ej-gal { display: flex; gap: 0.35rem; overflow-x: auto; margin: 0.6rem 0 0; }
+  .ej-gal button { padding: 0; border: 2px solid transparent; border-radius: 0.4rem; background: none; cursor: pointer; }
+  .ej-gal button.on { border-color: var(--gold); }
+  .ej-gal img { width: 3.4rem; height: 4.4rem; object-fit: cover; display: block; border-radius: 0.3rem; }
   .ej-kpis {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1721,6 +1736,10 @@
         <button class="paso" id="ej-cerrar" type="button">Cerrar</button>
       </div>
       <h2 id="ej-nombre"></h2>
+      <p class="ej-nick" id="ej-nick" hidden></p>
+      <img class="ej-foto" id="ej-foto" alt="" hidden>
+      <div class="ej-gal" id="ej-gal" hidden></div>
+      <p class="nota ej-bio" id="ej-bio" hidden></p>
       <div class="ej-kpis" id="ej-kpis"></div>
       <p class="nota" id="ej-otros-tit" hidden>También figura en</p>
       <div class="ej-clubes" id="ej-clubes"></div>
@@ -2767,6 +2786,12 @@ function aplicarLiga(data) {
       JUGADORES[idx][6] = p.motm;
       JUGADORES[idx].ligaId = p.id;
       JUGADORES[idx].otros = p.other_teams || [];
+      JUGADORES[idx].nick = p.nick || "";
+      JUGADORES[idx].bio = p.bio || "";
+      JUGADORES[idx].number = p.number || "";
+      JUGADORES[idx].position = p.position || "";
+      JUGADORES[idx].photo = p.photo || "";
+      JUGADORES[idx].photos = p.photos || [];
     }
   });
   function ensureFecha(n, dia) {
@@ -2897,6 +2922,12 @@ function plantelLive(i) {
     var row = [i, p.full_name, p.matches_played, p.goals, p.yellows, p.reds, p.motm];
     row.ligaId = p.id;
     row.otros = p.other_teams || [];
+    row.nick = p.nick || "";
+    row.bio = p.bio || "";
+    row.number = p.number || "";
+    row.position = p.position || "";
+    row.photo = p.photo || "";
+    row.photos = p.photos || [];
     todos.push(row);
     have[p.full_name.toLowerCase()] = true;
   });
@@ -3893,9 +3924,55 @@ if (typeof document !== "undefined") (function () {
   $("eq-buscar").addEventListener("input", pintarPlantel);
 
   var dlgJ = $("eq-jug");
+  function perfilDe(j) {
+    var out = { nick: j.nick || "", bio: j.bio || "", number: j.number || "", position: j.position || "", photo: j.photo || "", photos: j.photos || [] };
+    if (LIGA && LIGA.players) {
+      LIGA.players.forEach(function (p) {
+        if (j.ligaId ? p.id === j.ligaId : p.source_index === JUGADORES.indexOf(j)) {
+          out.nick = p.nick || "";
+          out.bio = p.bio || "";
+          out.number = p.number || "";
+          out.position = p.position || "";
+          out.photo = p.photo || "";
+          out.photos = p.photos || [];
+        }
+      });
+    }
+    return out;
+  }
   function abrirJugador(j) {
-    $("ej-nombre").textContent = j[1];
-    $("ej-meta").textContent = EQUIPOS[j[0]];
+    var perfil = perfilDe(j);
+    $("ej-nombre").textContent = (perfil.number ? perfil.number + " · " : "") + j[1];
+    $("ej-meta").textContent = [EQUIPOS[j[0]], perfil.position].filter(Boolean).join(" · ");
+    var nick = $("ej-nick");
+    nick.hidden = !perfil.nick;
+    nick.textContent = perfil.nick;
+    var foto = $("ej-foto");
+    if (perfil.photo) { foto.src = perfil.photo; foto.hidden = false; }
+    else { foto.removeAttribute("src"); foto.hidden = true; }
+    var gal = $("ej-gal");
+    gal.textContent = "";
+    var shots = perfil.photos && perfil.photos.length ? perfil.photos : (perfil.photo ? [{ src: perfil.photo, caption: "" }] : []);
+    gal.hidden = shots.length < 2;
+    shots.forEach(function (shot) {
+      var b = el("button");
+      b.type = "button";
+      if (shot.src === foto.src) b.className = "on";
+      var im = el("img");
+      im.src = shot.src;
+      im.alt = shot.caption || "";
+      b.appendChild(im);
+      b.addEventListener("click", function () {
+        foto.src = shot.src;
+        foto.hidden = false;
+        Array.prototype.forEach.call(gal.children, function (n) { n.className = ""; });
+        b.className = "on";
+      });
+      gal.appendChild(b);
+    });
+    var bio = $("ej-bio");
+    bio.hidden = !perfil.bio;
+    bio.textContent = perfil.bio;
     var kpis = $("ej-kpis");
     kpis.textContent = "";
     [["PJ", j[2]], ["Goles", j[3]], ["TA", j[4]], ["TR", j[5]], ["★", j[6] || 0]].forEach(function (x) {

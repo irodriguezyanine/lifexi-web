@@ -1,14 +1,47 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { EventKind, MatchStatus, PlayerClub, PlayerDossier } from "@/lib/admin/types";
+import type { EventKind, MatchStatus, PlayerClub, PlayerDossier, PlayerShot } from "@/lib/admin/types";
 import { publicSrc } from "@/lib/media";
 
-type Result<T> = { ok: true; data: T } | { ok: false; error: string };
+type Result<T = unknown> = { ok: true; data?: T } | { ok: false; error: string };
+
+const PROFILE_SLUG = "player_profiles";
+const BUCKET = "lifexi";
+
+export type PlayerProfile = {
+  nick?: string;
+  bio?: string;
+  number?: string;
+  position?: string;
+  photo?: string | null;
+  photos?: PlayerShot[];
+};
+
+type PlayerProfiles = Record<string, PlayerProfile>;
 
 function fail(error: string): Result<never> {
   return { ok: false, error };
+}
+
+function touchPublic() {
+  revalidatePath("/");
+  revalidatePath("/api/public/liga");
+}
+
+function readProfiles(extra: unknown, body: string | null | undefined): PlayerProfiles {
+  if (extra && typeof extra === "object" && !Array.isArray(extra)) return extra as PlayerProfiles;
+  if (body) {
+    try {
+      const parsed = JSON.parse(body) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed as PlayerProfiles;
+    } catch {
+      /* ignore */
+    }
+  }
+  return {};
 }
 
 function resultOf(
@@ -39,7 +72,7 @@ export async function getPlayerDossier(playerId: number): Promise<Result<PlayerD
     const { data: player, error } = await sb.from("players").select("*").eq("id", id).maybeSingle();
     if (error || !player) return fail("Jugador no encontrado");
 
-    const [teamRes, seasonRes, appearancesRes, eventsMain, eventsAssist, sanctionsRes, statsRes, mediaRes, tournamentsRes, nameTwinsRes, standingsRes, seasonsRes, teamsRes] =
+    const [teamRes, seasonRes, appearancesRes, eventsMain, eventsAssist, sanctionsRes, statsRes, mediaRes, tournamentsRes, nameTwinsRes, standingsRes, seasonsRes, teamsRes, profilesRes] =
       await Promise.all([
         sb.from("teams").select("*").eq("id", player.team_id).single(),
         sb.from("seasons").select("*").eq("id", player.season_id).single(),
@@ -56,7 +89,8 @@ export async function getPlayerDossier(playerId: number): Promise<Result<PlayerD
           p_through: 16,
         }),
         sb.from("seasons").select("id, name, year, status"),
-        sb.from("teams").select("id, name"),
+        sb.from("teams").select("id, name").order("name"),
+        sb.from("site_content").select("extra, body").eq("slug", PROFILE_SLUG).maybeSingle(),
       ]);
 
     const team = teamRes.data;
@@ -232,6 +266,8 @@ export async function getPlayerDossier(playerId: number): Promise<Result<PlayerD
       };
     });
 
+    const profile = readProfiles(profilesRes.data?.extra, profilesRes.data?.body)[String(id)] ?? {};
+
     return {
       ok: true,
       data: {
@@ -241,7 +277,14 @@ export async function getPlayerDossier(playerId: number): Promise<Result<PlayerD
           team_id: player.team_id,
           source_index: player.source_index,
           season_id: player.season_id,
+          nick: profile.nick ?? "",
+          bio: profile.bio ?? "",
+          number: profile.number ?? "",
+          position: profile.position ?? "",
+          photo: profile.photo ?? null,
+          photos: profile.photos ?? [],
         },
+        teams: ((teamsRes.data ?? []) as { id: number; name: string }[]).map((row) => ({ id: row.id, name: row.name })),
         team: {
           id: team.id,
           name: team.name,
@@ -359,3 +402,94 @@ export async function getPlayerDossier(playerId: number): Promise<Result<PlayerD
     return fail(error instanceof Error ? error.message : "No se pudo cargar");
   }
 }
+
+async function upsertProfiles(sb: ReturnType<typeof createAdminClient>, playerId: number, patch: PlayerProfile) {
+  const { data } = await sb.from("site_content").select("id, extra, body").eq("slug", PROFILE_SLUG).maybeSingle();
+  const profiles = readProfiles(data?.extra, data?.body);
+  const key = String(playerId);
+  const prev = profiles[key] ?? {};
+  profiles[key] = {
+    ...prev,
+    ...patch,
+    photos: patch.photos ?? prev.photos ?? [],
+  };
+  const extra = profiles;
+  const body = JSON.stringify(profiles);
+  if (data?.id) {
+    await sb.from("site_content").update({ extra, body, updated_at: new Date().toISOString() }).eq("id", data.id);
+    return;
+  }
+  await sb.from("site_content").insert({
+    slug: PROFILE_SLUG,
+    area: "jugadores",
+    title: "Perfiles de jugadores",
+    body,
+    is_visible: false,
+    sort_order: 960,
+    extra,
+  });
+}
+
+export async function savePlayerProfile(input: {
+  playerId: number;
+  nick?: string;
+  bio?: string;
+  number?: string;
+  position?: string;
+  photo?: string | null;
+  photos?: PlayerShot[];
+}): Promise<Result> {
+  try {
+    await requireAdmin();
+  } catch {
+    return fail("Sesión vencida");
+  }
+  const sb = createAdminClient();
+  await upsertProfiles(sb, input.playerId, {
+    ...(input.nick !== undefined ? { nick: input.nick } : {}),
+    ...(input.bio !== undefined ? { bio: input.bio } : {}),
+    ...(input.number !== undefined ? { number: input.number } : {}),
+    ...(input.position !== undefined ? { position: input.position } : {}),
+    ...(input.photo !== undefined ? { photo: input.photo } : {}),
+    ...(input.photos !== undefined ? { photos: input.photos } : {}),
+  });
+  touchPublic();
+  return { ok: true };
+}
+
+export async function uploadPlayerPhoto(formData: FormData): Promise<Result<{ url: string }>> {
+  try {
+    await requireAdmin();
+  } catch {
+    return fail("Sesión vencida");
+  }
+  const playerId = Number(formData.get("playerId"));
+  const file = formData.get("file");
+  if (!Number.isFinite(playerId) || !(file instanceof File)) return fail("Falta la foto");
+  if (file.size > 3_500_000) return fail("La foto pasa de 3,5 MB");
+  const type = file.type || "image/jpeg";
+  if (!type.startsWith("image/")) return fail("El archivo no es una imagen");
+  const sb = createAdminClient();
+  await sb.storage.createBucket(BUCKET, { public: true }).then(
+    () => undefined,
+    () => undefined,
+  );
+  const ext = (file.name.split(".").pop() || "jpg").replace(/[^a-z0-9]/gi, "").slice(0, 4) || "jpg";
+  const path = `players/${playerId}/${Date.now()}.${ext}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const { error } = await sb.storage.from(BUCKET).upload(path, buffer, { contentType: type, upsert: true });
+  if (error) return fail(error.message);
+  const { data } = sb.storage.from(BUCKET).getPublicUrl(path);
+  const url = data.publicUrl;
+  if (!url) return fail("No se obtuvo la URL");
+  const { data: row } = await sb.from("site_content").select("extra, body").eq("slug", PROFILE_SLUG).maybeSingle();
+  const prev = readProfiles(row?.extra, row?.body)[String(playerId)] ?? {};
+  const photos = [...(prev.photos ?? []), { src: url, caption: "" }];
+  await upsertProfiles(sb, playerId, {
+    photo: prev.photo || url,
+    photos,
+  });
+  touchPublic();
+  return { ok: true, data: { url } };
+}
+
