@@ -179,7 +179,15 @@ export type PlayerDossier = {
     round2: { pj: number; goals: number };
   };
   matches: DossierMatch[];
-  sanctions: { id: number; detail: string; sanction: string }[];
+  sanctions: {
+    id: number;
+    detail: string;
+    sanction: string;
+    duration?: number | null;
+    starts_matchday?: number | null;
+    origin_matchday?: number | null;
+    voided?: boolean | null;
+  }[];
   homonyms: { id: number; team: string; team_id: number }[];
   clubs: PlayerClub[];
   stints: DossierStint[];
@@ -220,8 +228,14 @@ export type TeamDossierTitle = {
   role: "champion" | "runner" | "dq" | "current";
   champion: string | null;
   runner_up: string | null;
+  champion_team_id: number | null;
+  runner_up_team_id: number | null;
   photo: string | null;
   thumb: string | null;
+  photo_id: number | null;
+  thumb_id: number | null;
+  photo_path: string | null;
+  thumb_path: string | null;
 };
 
 export type TeamDossierMatch = {
@@ -240,15 +254,28 @@ export type TeamDossierMatch = {
   motm_name: string | null;
 };
 
+export type TeamMediaShot = {
+  id: number;
+  src: string;
+  path: string;
+  caption: string | null;
+  sort_key: string | null;
+};
+
 export type TeamDossier = {
   team: {
     id: number;
     name: string;
     slug: string;
+    short_name: string | null;
+    bio: string;
+    campaign: string;
     is_dissolved: boolean;
     is_founding_team: boolean;
     logo: string | null;
-    squad_photos: { src: string; caption: string | null }[];
+    logo_id: number | null;
+    logo_path: string | null;
+    squad_photos: TeamMediaShot[];
   };
   season: {
     id: number;

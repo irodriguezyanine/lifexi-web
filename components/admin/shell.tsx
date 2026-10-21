@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AdminBack } from "@/components/admin/back";
 import { AdminStore } from "@/components/admin/store";
 import {
   IconBall,
@@ -106,6 +107,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
         <div className="adm-main">
+          <AdminBack />
           <AdminStore>{children}</AdminStore>
         </div>
       </div>

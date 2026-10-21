@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { loginAction, type LoginState } from "@/app/admin/actions";
+import { AdminBack } from "@/components/admin/back";
 import { IconEye, IconEyeOff, IconHome, IconUser } from "@/components/admin/icons";
 
 function SubmitButton() {
@@ -61,6 +62,7 @@ export function LoginForm({ error, nextPath }: { error?: string; nextPath: strin
 
   return (
     <div className="adm adm-login" style={kbPad ? { paddingBottom: kbPad } : undefined}>
+      <AdminBack />
       <form className="box" action={action} autoComplete="on" lang="es">
         <div className="login-brand">
           <a className="login-logo" href="/" title="Inicio" aria-label="Inicio">

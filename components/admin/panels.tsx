@@ -5,12 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import {
   addFixture,
-  deleteSanction,
   saveHistoryEntry,
   saveMatchday,
   saveMediaCaption,
   savePlayer,
-  saveSanction,
   saveSeason,
   saveSiteContent,
   saveTeam,
@@ -18,7 +16,7 @@ import {
 } from "@/app/admin/actions";
 import { PlayerDossierModal } from "@/components/admin/player-dossier";
 import { TeamDossierModal } from "@/components/admin/team-dossier";
-import { useAdminData } from "@/components/admin/store";
+import { bindPlayerRow, useAdminData } from "@/components/admin/store";
 import type { TeamRow } from "@/lib/admin/types";
 
 function teamName(teams: { id: number; name: string }[], id: number) {
@@ -696,12 +694,13 @@ export function PlayersPanel() {
 }
 
 export function ScorersPanel() {
-  const { data, loading, error } = useAdminData();
+  const { data, loading, error, openPlayer } = useAdminData();
   if (loading) return <p className="adm-load">Cargando…</p>;
   if (error || !data) return <p className="adm-alert">{error ?? "Sin datos"}</p>;
   const stats = [...(data.stats as { player_id: number; full_name: string; team_name: string; goals: number; yellows: number; reds: number; motm: number; matches_played: number }[])]
     .filter((s) => s.goals > 0)
     .sort((a, b) => b.goals - a.goals || a.full_name.localeCompare(b.full_name, "es"));
+  const ids = stats.map((s) => s.player_id);
   return (
     <>
       <Header title="Goleadores" note="Se recalcula desde goles cargados en cada partido." />
@@ -718,7 +717,7 @@ export function ScorersPanel() {
           </thead>
           <tbody>
             {stats.map((s, i) => (
-              <tr key={s.player_id}>
+              <tr key={s.player_id} {...bindPlayerRow(s.player_id, ids, openPlayer)}>
                 <td>{i + 1}</td>
                 <td>{s.full_name}</td>
                 <td>{s.team_name}</td>
@@ -825,106 +824,6 @@ export function FairPlayPanel() {
           </tbody>
         </table>
       </section>
-    </>
-  );
-}
-
-export function SanctionsPanel() {
-  const { data, loading, error, reload } = useAdminData();
-  const [player, setPlayer] = useState("");
-  const [detail, setDetail] = useState("");
-  const [sanction, setSanction] = useState("");
-  const [pending, start] = useTransition();
-  if (loading) return <p className="adm-load">Cargando…</p>;
-  if (error || !data) return <p className="adm-alert">{error ?? "Sin datos"}</p>;
-  const rows = data.sanctions as {
-    id: number;
-    detail: string;
-    sanction: string;
-    players: { full_name: string } | { full_name: string }[] | null;
-  }[];
-  return (
-    <>
-      <Header title="Sanciones" note="Publicadas tal cual las ve la liga." />
-      <div className="adm-grid">
-        <section className="adm-card">
-          <table className="adm-table">
-            <thead>
-              <tr>
-                <th>Jugador</th>
-                <th>Detalle</th>
-                <th>Sanción</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => {
-                const p = Array.isArray(r.players) ? r.players[0] : r.players;
-                return (
-                  <tr key={r.id}>
-                    <td>{p?.full_name}</td>
-                    <td>{r.detail}</td>
-                    <td>{r.sanction}</td>
-                    <td>
-                      <button
-                        className="adm-btn ghost"
-                        type="button"
-                        onClick={() =>
-                          start(async () => {
-                            await deleteSanction(r.id);
-                            void reload();
-                          })
-                        }
-                      >
-                        Quitar
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </section>
-        <section className="adm-card">
-          <h2>Nueva</h2>
-          <div className="adm-form">
-            <label>
-              Jugador
-              <select value={player} onChange={(e) => setPlayer(e.target.value)}>
-                <option value="">Elegir</option>
-                {data.players.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.full_name} · {teamName(data.teams, p.team_id)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Detalle
-              <input value={detail} onChange={(e) => setDetail(e.target.value)} />
-            </label>
-            <label>
-              Sanción
-              <input value={sanction} onChange={(e) => setSanction(e.target.value)} />
-            </label>
-            <button
-              className="adm-btn"
-              type="button"
-              disabled={pending}
-              onClick={() =>
-                start(async () => {
-                  await saveSanction({ player_id: Number(player), detail, sanction });
-                  setDetail("");
-                  setSanction("");
-                  void reload();
-                })
-              }
-            >
-              Publicar
-            </button>
-          </div>
-        </section>
-      </div>
     </>
   );
 }
@@ -1119,7 +1018,9 @@ export function HomePanel() {
   const [pending, start] = useTransition();
   if (loading) return <p className="adm-load">Cargando…</p>;
   if (error || !data) return <p className="adm-alert">{error ?? "Sin datos"}</p>;
-  const rows = data.content as { id: number; slug: string; area: string; title: string | null; body: string | null; is_visible: boolean }[];
+  const rows = (data.content as { id: number; slug: string; area: string; title: string | null; body: string | null; is_visible: boolean }[]).filter(
+    (r) => r.slug !== "sanctions_ledger",
+  );
   return (
     <>
       <Header title="Portada" note="Textos, pestañas y avisos del home." />

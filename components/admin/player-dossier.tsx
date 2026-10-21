@@ -432,9 +432,9 @@ function Discipline({ data }: { data: PlayerDossier }) {
           <ul className="pd-time">
             {data.sanctions.map((s) => (
               <li key={s.id}>
-                <span>{s.sanction}</span>
+                <span>{s.voided ? "Anulada" : s.sanction}</span>
                 <span>{s.detail}</span>
-                <span />
+                <span>{s.starts_matchday ? `F${s.starts_matchday}` : ""}</span>
               </li>
             ))}
           </ul>

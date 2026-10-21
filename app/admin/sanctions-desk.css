@@ -1,0 +1,388 @@
+.sn {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.sn-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sn-top h1 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 2rem;
+  letter-spacing: 0.02em;
+}
+
+.sn-top p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.sn-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.7rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sn-sync i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.sn-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.sn-cal {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.15rem 0 0.35rem;
+  scrollbar-width: thin;
+}
+
+.sn-chip {
+  flex: none;
+  display: grid;
+  justify-items: center;
+  gap: 0.12rem;
+  min-width: 3.1rem;
+  padding: 0.4rem 0.35rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+}
+
+.sn-chip b {
+  font-family: var(--display);
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.sn-chip small {
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sn-chip.on {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(228, 184, 74, 0.35);
+}
+
+.sn-chip.closed {
+  opacity: 0.72;
+}
+
+.sn-chip.today {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.sn-chip.next {
+  border-color: rgba(232, 57, 79, 0.45);
+}
+
+.sn-tabs {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.sn-tabs button {
+  min-height: 2.2rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.sn-tabs button[aria-selected="true"] {
+  background: var(--panel-2);
+  color: var(--ink);
+}
+
+.sn-tabs b {
+  margin-left: 0.3rem;
+  color: var(--gold);
+  font-size: 0.78rem;
+}
+
+.sn-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.sn-tools input,
+.sn-tools select {
+  max-width: 220px;
+}
+
+.sn-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.85fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.sn-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.sn-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--panel), #121c17);
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  width: 100%;
+}
+
+.sn-row:hover,
+.sn-row:focus-visible {
+  border-color: rgba(228, 184, 74, 0.4);
+  outline: none;
+}
+
+.sn-row.on {
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.sn-row.voided {
+  opacity: 0.55;
+}
+
+.sn-id {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.sn-id strong {
+  font-size: 0.95rem;
+}
+
+.sn-id span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.sn-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.sn-ticks {
+  display: flex;
+  gap: 0.18rem;
+}
+
+.sn-ticks i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2a3c33;
+}
+
+.sn-ticks i.done {
+  background: var(--green);
+}
+
+.sn-ticks i.now {
+  background: var(--gold);
+}
+
+.sn-group {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sn-empty {
+  margin: 0;
+  padding: 1.4rem 0.5rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.sn-actions {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.sn-actions button {
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  justify-content: center;
+}
+
+.sn-form {
+  position: sticky;
+  top: var(--adm-back-h, 3.35rem);
+  display: grid;
+  gap: 0.7rem;
+}
+
+.sn-form h2 {
+  margin: 0;
+}
+
+.sn-kinds,
+.sn-temps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.sn-kinds button,
+.sn-temps button {
+  min-height: 1.9rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.sn-kinds button.on,
+.sn-temps button.on {
+  background: var(--panel-2);
+  color: var(--ink);
+  border-color: var(--gold);
+}
+
+.sn-step {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.sn-step b {
+  font-family: var(--display);
+  font-size: 1.4rem;
+  min-width: 1.4rem;
+  text-align: center;
+}
+
+.sn-preview {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  background: #101813;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.sn-preview strong {
+  color: var(--ink);
+}
+
+.sn-pick {
+  display: grid;
+  gap: 0.2rem;
+  max-height: 11rem;
+  overflow: auto;
+}
+
+.sn-pick button {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.sn-pick button.on {
+  background: var(--panel-2);
+}
+
+.sn-inbox {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.sn-alert {
+  margin: 0;
+}
+
+.adm-pill.live {
+  color: var(--gold);
+  background: rgba(228, 184, 74, 0.12);
+}
+
+.sn-toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 40;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.55rem 0.7rem;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+@media (max-width: 980px) {
+  .sn-layout,
+  .sn-kpis {
+    grid-template-columns: 1fr;
+  }
+  .sn-form {
+    position: static;
+  }
+  .sn-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sn-meta {
+    justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sn-row,
+  .sn-chip {
+    transition: none;
+  }
+}

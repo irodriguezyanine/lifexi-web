@@ -7,7 +7,7 @@
 
 .md-board {
   position: sticky;
-  top: 0;
+  top: var(--adm-back-h, 3.35rem);
   z-index: 5;
   display: grid;
   gap: 0.7rem;

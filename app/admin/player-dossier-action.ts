@@ -46,7 +46,7 @@ export async function getPlayerDossier(playerId: number): Promise<Result<PlayerD
         sb.from("match_appearances").select("*, team_id").eq("player_id", id),
         sb.from("match_events").select("*").eq("player_id", id),
         sb.from("match_events").select("*").eq("assist_player_id", id),
-        sb.from("published_sanctions").select("id, detail, sanction").eq("player_id", id).order("sort_order"),
+        sb.from("published_sanctions").select("id, detail, sanction, duration, starts_matchday, origin_matchday, voided").eq("player_id", id).order("sort_order"),
         sb.from("v_player_season_stats").select("*").eq("season_id", player.season_id),
         sb.from("media").select("kind, object_path, team_id, historical_tournament_id"),
         sb.from("historical_tournaments").select("*").order("sort_order"),

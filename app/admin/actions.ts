@@ -13,6 +13,15 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin";
 import { publicSrc } from "@/lib/media";
 import type { EventKind } from "@/lib/admin/types";
+import {
+  applyLedger,
+  calendarState,
+  inferKind,
+  parseDuration,
+  readLedger,
+  type SanctionLedger,
+  type SanctionRow,
+} from "@/lib/admin/sanctions";
 
 const INITIAL_USER = "A";
 const INITIAL_PASS = "a";
@@ -34,6 +43,31 @@ async function actor() {
 function touchPublic() {
   revalidatePath("/");
   revalidatePath("/api/public/liga");
+}
+
+async function upsertSanctionLedger(
+  sb: ReturnType<typeof createAdminClient>,
+  id: number,
+  patch: SanctionLedger[string],
+) {
+  const { data } = await sb.from("site_content").select("id, extra, body").eq("slug", "sanctions_ledger").maybeSingle();
+  const ledger = readLedger(data?.extra, data?.body);
+  ledger[String(id)] = { ...ledger[String(id)], ...patch };
+  const extra = ledger;
+  const body = JSON.stringify(ledger);
+  if (data?.id) {
+    await sb.from("site_content").update({ extra, body, updated_at: new Date().toISOString() }).eq("id", data.id);
+    return;
+  }
+  await sb.from("site_content").insert({
+    slug: "sanctions_ledger",
+    area: "admin",
+    title: "Sanciones",
+    body,
+    is_visible: false,
+    sort_order: 980,
+    extra,
+  });
 }
 
 async function log(
@@ -372,12 +406,14 @@ export async function saveTeam(input: {
   id?: number;
   name: string;
   slug: string;
+  short_name?: string | null;
   is_dissolved: boolean;
   is_founding_team: boolean;
 }): Promise<ActionResult<{ id: number }>> {
   const who = await actor();
   if (!who) return fail("Sesión vencida");
   const sb = createAdminClient();
+  const shortName = input.short_name !== undefined ? input.short_name?.trim() || input.name.trim() : undefined;
   if (input.id) {
     const { error } = await sb
       .from("teams")
@@ -386,6 +422,7 @@ export async function saveTeam(input: {
         slug: input.slug.trim(),
         is_dissolved: input.is_dissolved,
         is_founding_team: input.is_founding_team,
+        ...(shortName !== undefined ? { short_name: shortName } : {}),
       })
       .eq("id", input.id);
     if (error) return fail(error.message);
@@ -575,16 +612,41 @@ export async function saveSanction(input: {
   player_id: number;
   detail: string;
   sanction: string;
+  kind?: string;
+  duration?: number;
+  origin_matchday?: number;
+  starts_matchday?: number;
+  note?: string | null;
+  voided?: boolean;
 }): Promise<ActionResult> {
   const who = await actor();
   if (!who) return fail("Sesión vencida");
   const sb = createAdminClient();
+  const extra: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (input.kind) extra.kind = input.kind;
+  if (input.duration != null) extra.duration = Math.max(1, Math.min(16, Number(input.duration) || 1));
+  if (input.origin_matchday != null) extra.origin_matchday = input.origin_matchday;
+  if (input.starts_matchday != null) extra.starts_matchday = input.starts_matchday;
+  if (input.note !== undefined) extra.note = input.note;
+  if (input.voided !== undefined) extra.voided = Boolean(input.voided);
+  if (!input.id) extra.issued_on = new Date().toISOString().slice(0, 10);
+  const base = { player_id: input.player_id, detail: input.detail, sanction: input.sanction };
   if (input.id) {
-    const { error } = await sb
-      .from("published_sanctions")
-      .update({ player_id: input.player_id, detail: input.detail, sanction: input.sanction })
-      .eq("id", input.id);
+    const full = { ...base, ...extra };
+    let { error } = await sb.from("published_sanctions").update(full).eq("id", input.id);
+    if (error && /column|schema cache/i.test(error.message)) {
+      ({ error } = await sb.from("published_sanctions").update(base).eq("id", input.id));
+    }
     if (error) return fail(error.message);
+    await upsertSanctionLedger(sb, input.id, {
+      kind: (input.kind as SanctionLedger[string]["kind"]) ?? inferKind(input.detail),
+      duration: input.duration != null ? Math.max(1, Math.min(16, Number(input.duration) || 1)) : undefined,
+      origin_matchday: input.origin_matchday,
+      starts_matchday: input.starts_matchday,
+      note: input.note,
+      voided: input.voided,
+    });
+    await log(who, "update", "published_sanctions", input.id, input.detail);
     touchPublic();
     return { ok: true };
   }
@@ -595,15 +657,137 @@ export async function saveSanction(input: {
     .order("sort_order", { ascending: false })
     .limit(1)
     .maybeSingle();
-  const { error } = await sb.from("published_sanctions").insert({
+  const insertFull = {
+    ...base,
+    ...extra,
     season_id: season?.id,
-    player_id: input.player_id,
-    detail: input.detail,
-    sanction: input.sanction,
     sort_order: (last?.sort_order ?? -1) + 1,
-  });
-  if (error) return fail(error.message);
-  await log(who, "create", "published_sanctions", undefined, input.detail);
+  };
+  let created: { id: number } | null = null;
+  let ins = await sb.from("published_sanctions").insert(insertFull).select("id").maybeSingle();
+  if (ins.error && /column|schema cache/i.test(ins.error.message)) {
+    ins = await sb.from("published_sanctions").insert({
+      ...base,
+      season_id: season?.id,
+      sort_order: (last?.sort_order ?? -1) + 1,
+    }).select("id").maybeSingle();
+  }
+  if (ins.error) return fail(ins.error.message);
+  created = ins.data;
+  const rowId = input.id ?? created?.id;
+  if (rowId) {
+    await upsertSanctionLedger(sb, rowId, {
+      kind: (input.kind as SanctionLedger[string]["kind"]) ?? inferKind(input.detail),
+      duration: input.duration != null ? Math.max(1, Math.min(16, Number(input.duration) || 1)) : undefined,
+      origin_matchday: input.origin_matchday,
+      starts_matchday: input.starts_matchday,
+      note: input.note,
+      voided: input.voided,
+    });
+  }
+  await log(who, "create", "published_sanctions", rowId, input.detail);
+  touchPublic();
+  return { ok: true, data: { id: rowId } };
+}
+
+export async function getSanctionsInbox(): Promise<ActionResult> {
+  const who = await actor();
+  if (!who) return fail("Sesión vencida");
+  const sb = createAdminClient();
+  const [eventsRes, appsRes, sanctionsRes, playersRes, teamsRes, matchesRes, daysRes, statsRes] = await Promise.all([
+    sb.from("match_events").select("id, kind, player_id, match_id").in("kind", ["red", "second_yellow"]),
+    sb.from("match_appearances").select("player_id, reds, yellows, match_id").gt("reds", 0),
+    sb.from("published_sanctions").select("player_id, kind, origin_matchday, voided"),
+    sb.from("players").select("id, full_name, team_id"),
+    sb.from("teams").select("id, name"),
+    sb.from("matches").select("id, matchday_id"),
+    sb.from("matchdays").select("id, number"),
+    sb.from("v_player_season_stats").select("player_id, yellows"),
+  ]);
+  const days = new Map((daysRes.data ?? []).map((d: { id: number; number: number }) => [d.id, d.number]));
+  const matchFecha = new Map(
+    (matchesRes.data ?? []).map((m: { id: number; matchday_id: number }) => [m.id, days.get(m.matchday_id) ?? 0]),
+  );
+  const players = new Map((playersRes.data ?? []).map((p: { id: number; full_name: string; team_id: number }) => [p.id, p]));
+  const teams = new Map((teamsRes.data ?? []).map((t: { id: number; name: string }) => [t.id, t.name]));
+  const published = (sanctionsRes.data ?? []) as { player_id: number; kind: string | null; origin_matchday: number | null; voided: boolean | null }[];
+  const out: {
+    key: string;
+    player_id: number;
+    player_name: string;
+    team_name: string;
+    kind: "red" | "second_yellow" | "yellow_accum";
+    matchday: number;
+    detail: string;
+  }[] = [];
+  const seen = new Set<string>();
+  function push(kind: "red" | "second_yellow" | "yellow_accum", playerId: number, matchday: number, detail: string) {
+    const p = players.get(playerId);
+    if (!p) return;
+    const already = published.some(
+      (s) => s.player_id === playerId && !s.voided && (s.kind === kind || !s.kind) && (s.origin_matchday == null || s.origin_matchday === matchday),
+    );
+    const key = `${kind}:${playerId}:${matchday}`;
+    if (already || seen.has(key)) return;
+    seen.add(key);
+    out.push({
+      key,
+      player_id: playerId,
+      player_name: p.full_name,
+      team_name: teams.get(p.team_id) ?? "",
+      kind,
+      matchday,
+      detail,
+    });
+  }
+  for (const e of eventsRes.data ?? []) {
+    const kind = e.kind === "red" ? "red" : "second_yellow";
+    push(kind, e.player_id, matchFecha.get(e.match_id) ?? 0, kind === "red" ? "Expulsión" : "Doble amarilla");
+  }
+  for (const a of appsRes.data ?? []) {
+    if ((a.reds ?? 0) > 0) push("red", a.player_id, matchFecha.get(a.match_id) ?? 0, "Expulsión");
+  }
+  for (const s of statsRes.data ?? []) {
+    const yellows = Number(s.yellows) || 0;
+    if (yellows < 4) continue;
+    const bans = Math.floor(yellows / 4);
+    const have = published.filter((x) => x.player_id === s.player_id && !x.voided && (x.kind === "yellow_accum" || !x.kind)).length;
+    if (have >= bans) continue;
+    push("yellow_accum", s.player_id, 0, "Acumulación de amarillas");
+  }
+  out.sort((a, b) => b.matchday - a.matchday || a.player_name.localeCompare(b.player_name, "es"));
+  return { ok: true, data: out.slice(0, 40) };
+}
+
+export async function syncSanctionCalendar(): Promise<ActionResult> {
+  const who = await actor();
+  if (!who) return fail("Sesión vencida");
+  const sb = createAdminClient();
+  let rowsRes = await sb.from("published_sanctions").select("id, detail, sanction, kind, duration, origin_matchday, starts_matchday, voided");
+  if (rowsRes.error) {
+    rowsRes = await sb.from("published_sanctions").select("id, detail, sanction");
+  }
+  const [{ data: days }, { data: ledgerRow }] = await Promise.all([
+    sb.from("matchdays").select("number, played_on").order("number"),
+    sb.from("site_content").select("extra, body").eq("slug", "sanctions_ledger").maybeSingle(),
+  ]);
+  const rows = rowsRes.data as { id: number; detail: string; sanction: string; kind?: string | null; duration?: number | null; origin_matchday?: number | null; starts_matchday?: number | null; voided?: boolean | null }[] | null;
+  const cal = calendarState((days ?? []) as { number: number; played_on: string | null }[]);
+  const start = cal.next?.number ?? cal.lastClosed + 1;
+  const ledger = readLedger(ledgerRow?.extra, ledgerRow?.body);
+  for (const row of rows ?? []) {
+    const cur = ledger[String(row.id)] ?? {};
+    if (cur.starts_matchday != null || row.starts_matchday != null) continue;
+    ledger[String(row.id)] = {
+      ...cur,
+      kind: (row.kind as SanctionLedger[string]["kind"]) || inferKind(row.detail),
+      duration: row.duration ?? parseDuration(row.sanction),
+      origin_matchday: row.origin_matchday ?? (cal.lastClosed || 1),
+      starts_matchday: start,
+      voided: Boolean(row.voided),
+    };
+    await upsertSanctionLedger(sb, row.id, ledger[String(row.id)]);
+  }
   touchPublic();
   return { ok: true };
 }
@@ -778,7 +962,7 @@ export async function listDirectory(): Promise<ActionResult> {
       sb.from("players").select("id, full_name, team_id, source_index, season_id").order("full_name"),
       sb.from("matchdays").select("*").order("number"),
       sb.from("v_match_calendar").select("*").order("matchday_number").order("sort_order"),
-      sb.from("published_sanctions").select("*, players(full_name, team_id)").order("sort_order"),
+      sb.from("published_sanctions").select("*, players(id, full_name, team_id)").order("sort_order"),
       sb.from("league_history_entries").select("*").order("sort_order"),
       sb.from("historical_tournaments").select("*").order("sort_order"),
       sb.from("media").select("*").order("kind").order("sort_key"),
@@ -797,7 +981,10 @@ export async function listDirectory(): Promise<ActionResult> {
       players: players.data ?? [],
       matchdays: matchdays.data ?? [],
       calendar: calendar.data ?? [],
-      sanctions: sanctions.data ?? [],
+      sanctions: applyLedger((sanctions.data ?? []) as SanctionRow[], readLedger(
+        (content.data ?? []).find((c: { slug?: string }) => c.slug === "sanctions_ledger")?.extra,
+        (content.data ?? []).find((c: { slug?: string }) => c.slug === "sanctions_ledger")?.body,
+      )),
       history: history.data ?? [],
       tournaments: tournaments.data ?? [],
       media: media.data ?? [],

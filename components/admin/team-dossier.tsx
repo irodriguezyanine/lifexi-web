@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { saveTeam } from "@/app/admin/actions";
-import { getTeamDossier } from "@/app/admin/team-dossier-action";
-import { IconChevL, IconChevR, IconClose, IconCopy, IconEdit } from "@/components/admin/icons";
-import type { TeamDossier, TeamDossierPlayer, TeamDossierTitle } from "@/lib/admin/types";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { savePlayer, saveTeam } from "@/app/admin/actions";
+import {
+  deleteTeamMedia,
+  getTeamDossier,
+  saveTeamCaption,
+  saveTeamMedia,
+  saveTeamProfile,
+  saveTeamTitle,
+  setSquadCover,
+} from "@/app/admin/team-dossier-action";
+import { IconChevL, IconChevR, IconClose, IconCopy } from "@/components/admin/icons";
+import type { TeamDossier, TeamDossierPlayer, TeamDossierTitle, TeamMediaShot } from "@/lib/admin/types";
 import "@/app/admin/player-dossier.css";
 import "@/app/admin/team-dossier.css";
 
@@ -20,6 +28,7 @@ const TABS = [
 
 type Tab = (typeof TABS)[number]["id"];
 type SortKey = "full_name" | "matches_played" | "goals" | "yellows" | "reds" | "motm";
+type Sync = "live" | "idle" | "saving" | "err";
 
 function fmtDate(value: string | null) {
   if (!value) return "—";
@@ -43,6 +52,13 @@ function roleChip(role: TeamDossierTitle["role"]) {
   return <span className="pd-chip now">En curso</span>;
 }
 
+function syncLabel(sync: Sync) {
+  if (sync === "saving") return "Guardando";
+  if (sync === "idle") return "Sin publicar";
+  if (sync === "err") return "Reintentar";
+  return "En la web";
+}
+
 export function TeamDossierModal({
   teamId,
   listIds,
@@ -60,6 +76,8 @@ export function TeamDossierModal({
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const timer = useRef<number | null>(null);
+  const slugLocked = useRef(false);
   const [tab, setTab] = useState<Tab>("actual");
   const [data, setData] = useState<TeamDossier | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -70,13 +88,88 @@ export function TeamDossierModal({
   const [titleId, setTitleId] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [shortName, setShortName] = useState("");
+  const [bio, setBio] = useState("");
+  const [campaign, setCampaign] = useState("");
   const [founding, setFounding] = useState(false);
   const [dissolved, setDissolved] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [pending, start] = useTransition();
+  const [sync, setSync] = useState<Sync>("live");
+  const [err, setErr] = useState<string | null>(null);
   const idx = listIds.indexOf(teamId);
   const prev = idx > 0 ? listIds[idx - 1] : null;
   const next = idx >= 0 && idx < listIds.length - 1 ? listIds[idx + 1] : null;
+  const identity = useRef({ teamId, name, slug, shortName, bio, campaign, founding, dissolved });
+  identity.current = { teamId, name, slug, shortName, bio, campaign, founding, dissolved };
+
+  async function reload(id = teamId) {
+    const res = await getTeamDossier(id);
+    if (!res.ok || !res.data) return res;
+    const dossier = res.data;
+    setData(dossier);
+    setName(dossier.team.name);
+    setSlug(dossier.team.slug);
+    setShortName(dossier.team.short_name ?? "");
+    setBio(dossier.team.bio);
+    setCampaign(dossier.team.campaign);
+    setFounding(dossier.team.is_founding_team);
+    setDissolved(dossier.team.is_dissolved);
+    slugLocked.current = false;
+    const first = dossier.titles.find((row) => row.role === "champion" && (row.photo || row.thumb));
+    setTitleId((cur) => cur ?? first?.id ?? dossier.titles[0]?.id ?? null);
+    return res;
+  }
+
+  async function flushIdentity() {
+    const cur = identity.current;
+    if (!cur.name.trim()) return;
+    setSync("saving");
+    const a = await saveTeam({
+      id: cur.teamId,
+      name: cur.name.trim(),
+      slug: cur.slug.trim() || slugify(cur.name),
+      short_name: cur.shortName.trim() || cur.name.trim(),
+      is_dissolved: cur.dissolved,
+      is_founding_team: cur.founding,
+    });
+    if (!a.ok) {
+      setSync("err");
+      setErr(a.error);
+      return;
+    }
+    const b = await saveTeamProfile({ teamId: cur.teamId, bio: cur.bio, campaign: cur.campaign });
+    if (!b.ok) {
+      setSync("err");
+      setErr(b.error);
+      return;
+    }
+    setSync("live");
+    setErr(null);
+    onSaved?.();
+  }
+
+  function schedule() {
+    setSync("idle");
+    setErr(null);
+    if (timer.current) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      void flushIdentity();
+    }, 650);
+  }
+
+  async function run(task: () => Promise<{ ok: boolean; error?: string }>) {
+    setSync("saving");
+    const res = await task();
+    if (!res.ok) {
+      setSync("err");
+      setErr(res.error ?? "No se pudo guardar");
+      return false;
+    }
+    setSync("live");
+    setErr(null);
+    onSaved?.();
+    await reload();
+    return true;
+  }
 
   useEffect(() => {
     const node = dialog.current;
@@ -96,19 +189,25 @@ export function TeamDossierModal({
     setError(null);
     setTab("actual");
     setQ("");
-    setMsg(null);
+    setSync("live");
+    setErr(null);
+    setTitleId(null);
     void getTeamDossier(teamId)
       .then((res) => {
         if (!live) return;
-        if (!res.ok) {
-          setError(res.error);
+        if (!res.ok || !res.data) {
+          setError(res.ok ? "No se pudo cargar" : res.error);
           setData(null);
         } else {
           setData(res.data);
           setName(res.data.team.name);
           setSlug(res.data.team.slug);
+          setShortName(res.data.team.short_name ?? "");
+          setBio(res.data.team.bio);
+          setCampaign(res.data.team.campaign);
           setFounding(res.data.team.is_founding_team);
           setDissolved(res.data.team.is_dissolved);
+          slugLocked.current = false;
           const first = res.data.titles.find((row) => row.role === "champion" && (row.photo || row.thumb));
           setTitleId(first?.id ?? res.data.titles[0]?.id ?? null);
         }
@@ -121,11 +220,18 @@ export function TeamDossierModal({
       });
     return () => {
       live = false;
+      if (timer.current) window.clearTimeout(timer.current);
     };
   }, [teamId]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        if (timer.current) window.clearTimeout(timer.current);
+        void flushIdentity();
+        return;
+      }
       const t = event.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
       if (event.key === "ArrowLeft" && prev) onOpen(prev);
@@ -137,7 +243,7 @@ export function TeamDossierModal({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [prev, next, onOpen, tab]);
+  });
 
   const shown = useMemo(() => {
     if (!data) return [];
@@ -157,9 +263,10 @@ export function TeamDossierModal({
   }, [data, q, onlyPlayed, sort]);
 
   const titlesWithPhoto = data?.titles.filter((row) => row.role === "champion") ?? [];
-  const selectedTitle = data?.titles.find((row) => row.id === titleId) ?? titlesWithPhoto[0] ?? null;
+  const selectedTitle = data?.titles.find((row) => row.id === titleId) ?? titlesWithPhoto[0] ?? data?.titles[0] ?? null;
   const t = data?.team;
   const tb = data?.table;
+  const cover = t?.squad_photos[0];
 
   function toggleSort(key: SortKey) {
     setSort((cur) => (cur.key === key ? { key, asc: !cur.asc } : { key, asc: key === "full_name" }));
@@ -176,17 +283,18 @@ export function TeamDossierModal({
     >
       <div className="td-shell">
         <div className="td-hero">
-          {t?.squad_photos[0] ? <img className="td-banner" src={t.squad_photos[0].src} alt="" /> : null}
+          {cover ? <img className="td-banner" src={cover.src} alt="" /> : null}
           <header className="td-head">
             {t?.logo ? <img className="td-logo" src={t.logo} alt="" width={72} height={72} /> : <span className="td-logo" />}
             <div className="td-id">
-              <h2 id="td-name">{t?.name ?? "Equipo"}</h2>
+              <h2 id="td-name">{name || t?.name || "Equipo"}</h2>
               <p>
                 {tb?.pos ? <span className="pd-chip now">{tb.pos}º</span> : null}
                 {data?.season ? <span className="pd-chip">{data.season.name}</span> : null}
-                {t?.is_founding_team ? <span className="pd-chip">Fundador</span> : null}
-                {t?.is_dissolved ? <span className="pd-chip loss">Disuelto</span> : null}
-                {t ? <span className="pd-chip">{t.slug}</span> : null}
+                {founding ? <span className="pd-chip">Fundador</span> : null}
+                {dissolved ? <span className="pd-chip loss">Disuelto</span> : null}
+                {shortName && shortName !== name ? <span className="pd-chip">{shortName}</span> : null}
+                {slug ? <span className="pd-chip">{slug}</span> : null}
               </p>
             </div>
             <div className="td-tools">
@@ -201,14 +309,21 @@ export function TeamDossierModal({
                 type="button"
                 title="Copiar"
                 aria-label="Copiar"
-                onClick={() => t && void navigator.clipboard.writeText(t.name)}
+                onClick={() => void navigator.clipboard.writeText(name || t?.name || "")}
               >
                 <IconCopy />
               </button>
-              <button className="pd-icon" type="button" title="Editar" aria-label="Editar" onClick={() => setTab("ficha")}>
-                <IconEdit />
-              </button>
-              <button className="pd-icon" type="button" title="Cerrar" aria-label="Cerrar" onClick={onClose}>
+              <button
+                className="pd-icon"
+                type="button"
+                title="Cerrar"
+                aria-label="Cerrar"
+                onClick={() => {
+                  if (timer.current) window.clearTimeout(timer.current);
+                  void flushIdentity();
+                  onClose();
+                }}
+              >
                 <IconClose />
               </button>
             </div>
@@ -271,6 +386,7 @@ export function TeamDossierModal({
             >
               {item.label}
               {item.id === "plantel" && data ? ` ${data.roster.length}` : ""}
+              {item.id === "fotos" && data ? ` ${data.team.squad_photos.length}` : ""}
               {item.id === "campeonatos" && data ? ` ${data.club.titles}` : ""}
             </button>
           ))}
@@ -279,7 +395,44 @@ export function TeamDossierModal({
         <div className="td-body">
           {busy ? <p className="pd-load">Cargando</p> : null}
           {error ? <p className="adm-alert">{error}</p> : null}
-          {!busy && data && tab === "actual" ? <Actual data={data} onOpenPlayer={onOpenPlayer} /> : null}
+          {!busy && data && tab === "actual" ? (
+            <Actual
+              data={data}
+              bio={bio}
+              shortName={shortName}
+              logoPath={data.team.logo_path ?? ""}
+              founding={founding}
+              dissolved={dissolved}
+              onBio={(value) => {
+                setBio(value);
+                schedule();
+              }}
+              onShort={(value) => {
+                setShortName(value);
+                schedule();
+              }}
+              onFounding={(value) => {
+                setFounding(value);
+                schedule();
+              }}
+              onDissolved={(value) => {
+                setDissolved(value);
+                schedule();
+              }}
+              onLogo={(path) =>
+                void run(() =>
+                  saveTeamMedia({
+                    id: data.team.logo_id ?? undefined,
+                    team_id: data.team.id,
+                    kind: "team_logo",
+                    object_path: path,
+                  }),
+                )
+              }
+              onCover={(mediaId) => void run(() => setSquadCover({ teamId: data.team.id, mediaId }))}
+              onOpenPlayer={onOpenPlayer}
+            />
+          ) : null}
           {!busy && data && tab === "plantel" ? (
             <Plantel
               shown={shown}
@@ -293,60 +446,177 @@ export function TeamDossierModal({
               onSort={toggleSort}
               onOpenPlayer={onOpenPlayer}
               onOpenTeam={onOpen}
+              onRename={(id, full_name) =>
+                void run(() => savePlayer({ id, full_name, team_id: data.team.id }))
+              }
+              onAdd={(full_name) => void run(() => savePlayer({ full_name, team_id: data.team.id }))}
             />
           ) : null}
-          {!busy && data && tab === "fotos" ? <Fotos data={data} /> : null}
-          {!busy && data && tab === "campeonatos" ? (
-            <Campeonatos titles={titlesWithPhoto.length ? titlesWithPhoto : data.titles} selected={selectedTitle} onSelect={setTitleId} />
+          {!busy && data && tab === "fotos" ? (
+            <Fotos
+              data={data}
+              onCaption={(id, caption) => void run(() => saveTeamCaption({ id, caption }))}
+              onCover={(mediaId) => void run(() => setSquadCover({ teamId: data.team.id, mediaId }))}
+              onAdd={(path, caption) =>
+                void run(() =>
+                  saveTeamMedia({
+                    team_id: data.team.id,
+                    kind: "squad_photo",
+                    object_path: path,
+                    caption,
+                    cover: data.team.squad_photos.length === 0,
+                  }),
+                )
+              }
+              onDelete={(id) => void run(() => deleteTeamMedia({ id }))}
+            />
           ) : null}
-          {!busy && data && tab === "campana" ? <Campana data={data} /> : null}
+          {!busy && data && tab === "campeonatos" ? (
+            <Campeonatos
+              titles={titlesWithPhoto.length ? titlesWithPhoto : data.titles}
+              selected={selectedTitle}
+              onSelect={setTitleId}
+              onSave={(patch) => void run(() => saveTeamTitle({ ...patch, team_id: data.team.id }))}
+            />
+          ) : null}
+          {!busy && data && tab === "campana" ? (
+            <Campana
+              data={data}
+              campaign={campaign}
+              onCampaign={(value) => {
+                setCampaign(value);
+                schedule();
+              }}
+            />
+          ) : null}
           {!busy && data && tab === "ficha" ? (
             <Ficha
               name={name}
               slug={slug}
+              shortName={shortName}
               founding={founding}
               dissolved={dissolved}
-              pending={pending}
-              msg={msg}
               onName={(value) => {
                 setName(value);
-                if (slug === data.team.slug || slug === slugify(name)) setSlug(slugify(value));
+                if (!slugLocked.current) setSlug(slugify(value));
+                schedule();
               }}
-              onSlug={setSlug}
-              onFounding={setFounding}
-              onDissolved={setDissolved}
-              onSave={() =>
-                start(async () => {
-                  const res = await saveTeam({
-                    id: data.team.id,
-                    name,
-                    slug: slug || slugify(name),
-                    is_dissolved: dissolved,
-                    is_founding_team: founding,
-                  });
-                  if (!res.ok) setMsg(res.error);
-                  else {
-                    setMsg(null);
-                    onSaved?.();
-                    const again = await getTeamDossier(data.team.id);
-                    if (again.ok) setData(again.data);
-                  }
-                })
-              }
+              onSlug={(value) => {
+                slugLocked.current = true;
+                setSlug(value);
+                schedule();
+              }}
+              onShort={(value) => {
+                setShortName(value);
+                schedule();
+              }}
+              onFounding={(value) => {
+                setFounding(value);
+                schedule();
+              }}
+              onDissolved={(value) => {
+                setDissolved(value);
+                schedule();
+              }}
             />
           ) : null}
         </div>
+
+        <footer className="td-dock">
+          <button
+            className={`td-sync ${sync}`}
+            type="button"
+            title={err ?? syncLabel(sync)}
+            onClick={() => {
+              if (sync === "err" || sync === "idle") void flushIdentity();
+            }}
+          >
+            <i />
+            {syncLabel(sync)}
+          </button>
+          <span className="td-dock-note">{err ?? "Los cambios salen en el perfil público"}</span>
+        </footer>
       </div>
     </dialog>
   );
 }
 
-function Actual({ data, onOpenPlayer }: { data: TeamDossier; onOpenPlayer: (id: number) => void }) {
+function Flag({ on, label, onToggle }: { on: boolean; label: string; onToggle: (value: boolean) => void }) {
+  return (
+    <button className={`td-seg ${on ? "on" : ""}`} type="button" aria-pressed={on} onClick={() => onToggle(!on)}>
+      {label}
+    </button>
+  );
+}
+
+function Actual({
+  data,
+  bio,
+  shortName,
+  logoPath,
+  founding,
+  dissolved,
+  onBio,
+  onShort,
+  onFounding,
+  onDissolved,
+  onLogo,
+  onCover,
+  onOpenPlayer,
+}: {
+  data: TeamDossier;
+  bio: string;
+  shortName: string;
+  logoPath: string;
+  founding: boolean;
+  dissolved: boolean;
+  onBio: (value: string) => void;
+  onShort: (value: string) => void;
+  onFounding: (value: boolean) => void;
+  onDissolved: (value: boolean) => void;
+  onLogo: (path: string) => void;
+  onCover: (mediaId: number) => void;
+  onOpenPlayer: (id: number) => void;
+}) {
+  const [logoDraft, setLogoDraft] = useState(logoPath);
+  useEffect(() => {
+    setLogoDraft(logoPath);
+  }, [logoPath]);
   const played = data.matches.filter((row) => row.result);
-  const top = data.roster.filter((row) => row.goals > 0).slice().sort((a, b) => b.goals - a.goals || a.full_name.localeCompare(b.full_name, "es")).slice(0, 5);
-  const linked = data.roster.filter((row) => row.otherClubs.length > 0);
+  const top = data.roster
+    .filter((row) => row.goals > 0)
+    .slice()
+    .sort((a, b) => b.goals - a.goals || a.full_name.localeCompare(b.full_name, "es"))
+    .slice(0, 5);
   return (
     <div className="td-two">
+      <section className="pd-card td-edit">
+        <h3>En la web</h3>
+        <label>
+          Nombre corto
+          <input type="text" value={shortName} maxLength={24} onChange={(event) => onShort(event.target.value)} />
+        </label>
+        <label>
+          Texto del perfil
+          <textarea value={bio} rows={4} maxLength={420} onChange={(event) => onBio(event.target.value)} />
+          <small>{bio.length}/420</small>
+        </label>
+        <label>
+          Escudo (URL)
+          <input
+            type="url"
+            value={logoDraft}
+            onChange={(event) => setLogoDraft(event.target.value)}
+            onBlur={() => {
+              if (logoDraft.trim() && logoDraft.trim() !== logoPath) onLogo(logoDraft.trim());
+            }}
+          />
+        </label>
+        <div className="td-flags">
+          <Flag on={founding} label="Fundador" onToggle={onFounding} />
+          <Flag on={dissolved} label="Disuelto" onToggle={onDissolved} />
+        </div>
+      </section>
       <section className="pd-card">
         <h3>Campeonato</h3>
         <div className="pd-meta">
@@ -396,38 +666,26 @@ function Actual({ data, onOpenPlayer }: { data: TeamDossier; onOpenPlayer: (id: 
           ))
         )}
       </section>
-      {data.team.squad_photos[0] ? (
-        <section className="pd-card" style={{ gridColumn: "1 / -1" }}>
-          <h3>Plantel</h3>
-          <img className="pd-photo" src={data.team.squad_photos[0].src} alt="" style={{ maxHeight: 280 }} />
-        </section>
-      ) : null}
-      {linked.length ? (
-        <section className="pd-card" style={{ gridColumn: "1 / -1" }}>
-          <h3>También en otros clubes</h3>
-          {linked.map((row) => (
-            <div key={row.id} className="pd-stint">
-              <button type="button" className="enlace" onClick={() => onOpenPlayer(row.id)}>
-                {row.full_name}
+      <section className="pd-card">
+        <h3>Portada</h3>
+        {data.team.squad_photos.length === 0 ? (
+          <p className="pd-empty">Sin fotos. Cárgalas en Fotos.</p>
+        ) : (
+          <div className="td-covers">
+            {data.team.squad_photos.map((row, i) => (
+              <button
+                key={row.id}
+                type="button"
+                className={i === 0 ? "on" : undefined}
+                title={i === 0 ? "Portada" : "Usar de portada"}
+                onClick={() => onCover(row.id)}
+              >
+                <img src={row.src} alt="" />
               </button>
-              <b>{row.otherClubs.map((c) => c.team_name).join(" · ")}</b>
-            </div>
-          ))}
-        </section>
-      ) : null}
-      {data.alumni.length ? (
-        <section className="pd-card" style={{ gridColumn: "1 / -1" }}>
-          <h3>Pasaron por este club</h3>
-          {data.alumni.map((row) => (
-            <button key={row.id} className="pd-stint" type="button" onClick={() => onOpenPlayer(row.id)}>
-              <span>{row.full_name}</span>
-              <b>
-                {row.matches_played} PJ · {row.goals} G
-              </b>
-            </button>
-          ))}
-        </section>
-      ) : null}
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -444,6 +702,8 @@ function Plantel({
   onSort,
   onOpenPlayer,
   onOpenTeam,
+  onRename,
+  onAdd,
 }: {
   shown: TeamDossierPlayer[];
   total: number;
@@ -456,7 +716,10 @@ function Plantel({
   onSort: (key: SortKey) => void;
   onOpenPlayer: (id: number) => void;
   onOpenTeam: (id: number) => void;
+  onRename: (id: number, name: string) => void;
+  onAdd: (name: string) => void;
 }) {
+  const [draft, setDraft] = useState("");
   const heads: { key: SortKey; label: string; num?: boolean }[] = [
     { key: "full_name", label: "Jugador" },
     { key: "matches_played", label: "PJ", num: true },
@@ -467,6 +730,27 @@ function Plantel({
   ];
   return (
     <div>
+      <form
+        className="td-add"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const value = draft.trim();
+          if (!value) return;
+          onAdd(value);
+          setDraft("");
+        }}
+      >
+        <input
+          type="text"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder="Nuevo jugador"
+          aria-label="Nuevo jugador"
+        />
+        <button type="submit" disabled={!draft.trim()}>
+          Sumar
+        </button>
+      </form>
       <div className="td-plantel-top">
         <input
           ref={searchRef}
@@ -506,18 +790,29 @@ function Plantel({
           </thead>
           <tbody>
             {shown.map((row) => (
-              <tr
-                key={row.id}
-                tabIndex={0}
-                onClick={() => onOpenPlayer(row.id)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    onOpenPlayer(row.id);
-                  }
-                }}
-              >
-                <td className="td-name">{row.full_name}</td>
+              <tr key={row.id}>
+                <td className="td-name">
+                  <input
+                    key={row.full_name}
+                    className="td-inline"
+                    defaultValue={row.full_name}
+                    aria-label={row.full_name}
+                    onClick={(event) => event.stopPropagation()}
+                    onBlur={(event) => {
+                      const value = event.target.value.trim();
+                      if (value && value !== row.full_name) onRename(row.id, value);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        (event.target as HTMLInputElement).blur();
+                      }
+                    }}
+                  />
+                  <button type="button" className="td-open" title="Ficha" onClick={() => onOpenPlayer(row.id)}>
+                    Ficha
+                  </button>
+                </td>
                 <td className="num">{row.matches_played}</td>
                 <td className="num">{row.goals}</td>
                 <td className="num">{row.yellows}</td>
@@ -527,15 +822,7 @@ function Plantel({
                   {row.otherClubs.length ? (
                     <div className="td-clubs">
                       {row.otherClubs.map((c) => (
-                        <button
-                          key={c.player_id}
-                          type="button"
-                          title={c.team_name}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onOpenTeam(c.team_id);
-                          }}
-                        >
+                        <button key={c.player_id} type="button" title={c.team_name} onClick={() => onOpenTeam(c.team_id)}>
                           {c.team_name}
                         </button>
                       ))}
@@ -553,21 +840,100 @@ function Plantel({
   );
 }
 
-function Fotos({ data }: { data: TeamDossier }) {
-  const shots = [
-    data.team.logo ? { src: data.team.logo, caption: "Escudo" } : null,
-    ...data.team.squad_photos.map((row, i) => ({ src: row.src, caption: row.caption || `Plantel ${i + 1}` })),
-    ...data.titles.filter((row) => row.photo || row.thumb).map((row) => ({ src: row.photo || row.thumb || "", caption: row.label })),
-  ].filter((row): row is { src: string; caption: string } => Boolean(row?.src));
-  if (!shots.length) return <p className="pd-empty">Sin fotos</p>;
+function ShotCard({
+  shot,
+  cover,
+  onCaption,
+  onCover,
+  onDelete,
+}: {
+  shot: TeamMediaShot;
+  cover: boolean;
+  onCaption: (id: number, caption: string | null) => void;
+  onCover: (id: number) => void;
+  onDelete: (id: number) => void;
+}) {
+  const [caption, setCaption] = useState(shot.caption ?? "");
+  useEffect(() => {
+    setCaption(shot.caption ?? "");
+  }, [shot.caption, shot.id]);
   return (
-    <div className="td-gal">
-      {shots.map((row) => (
-        <figure key={row.src + row.caption}>
-          <img src={row.src} alt="" />
-          <figcaption>{row.caption}</figcaption>
-        </figure>
-      ))}
+    <figure className={cover ? "on" : undefined}>
+      <img src={shot.src} alt="" />
+      {cover ? <span className="td-badge">Portada</span> : null}
+      <figcaption>
+        <input
+          type="text"
+          value={caption}
+          placeholder="Pie"
+          onChange={(event) => setCaption(event.target.value)}
+          onBlur={() => {
+            const next = caption.trim() || null;
+            if (next !== (shot.caption ?? null)) onCaption(shot.id, next);
+          }}
+        />
+        <div className="td-shot-actions">
+          <button type="button" disabled={cover} onClick={() => onCover(shot.id)}>
+            Portada
+          </button>
+          <button
+            type="button"
+            className="danger"
+            title="Quitar"
+            onClick={() => {
+              if (window.confirm("¿Quitar esta foto?")) onDelete(shot.id);
+            }}
+          >
+            Quitar
+          </button>
+        </div>
+      </figcaption>
+    </figure>
+  );
+}
+
+function Fotos({
+  data,
+  onCaption,
+  onCover,
+  onAdd,
+  onDelete,
+}: {
+  data: TeamDossier;
+  onCaption: (id: number, caption: string | null) => void;
+  onCover: (mediaId: number) => void;
+  onAdd: (path: string, caption: string | null) => void;
+  onDelete: (id: number) => void;
+}) {
+  const [url, setUrl] = useState("");
+  const [caption, setCaption] = useState("");
+  return (
+    <div>
+      <form
+        className="td-add"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!url.trim()) return;
+          onAdd(url.trim(), caption.trim() || null);
+          setUrl("");
+          setCaption("");
+        }}
+      >
+        <input type="url" value={url} onChange={(event) => setUrl(event.target.value)} placeholder="URL de la foto" aria-label="URL de la foto" />
+        <input type="text" value={caption} onChange={(event) => setCaption(event.target.value)} placeholder="Pie" aria-label="Pie de foto" />
+        <button type="submit" disabled={!url.trim()}>
+          Sumar
+        </button>
+      </form>
+      {data.team.squad_photos.length === 0 ? (
+        <p className="pd-empty">Sin fotos de plantel</p>
+      ) : (
+        <div className="td-gal">
+          {data.team.squad_photos.map((row, i) => (
+            <ShotCard key={row.id} shot={row} cover={i === 0} onCaption={onCaption} onCover={onCover} onDelete={onDelete} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -576,10 +942,12 @@ function Campeonatos({
   titles,
   selected,
   onSelect,
+  onSave,
 }: {
   titles: TeamDossierTitle[];
   selected: TeamDossierTitle | null;
   onSelect: (id: number) => void;
+  onSave: (patch: { id: number; venue?: string | null; notes?: string | null; photo_path?: string | null; photo_id?: number | null }) => void;
 }) {
   if (!titles.length) return <p className="pd-empty">Sin campeonatos</p>;
   const current = selected ?? titles[0];
@@ -602,46 +970,112 @@ function Campeonatos({
           </button>
         ))}
       </div>
-      <div className="td-camp-view">
-        {current.photo || current.thumb ? <img src={current.photo || current.thumb || ""} alt="" /> : <p className="pd-empty">Sin foto</p>}
-        <h3>{current.label}</h3>
-        <p className="pd-empty" style={{ marginTop: 0 }}>
-          {current.official_number ? `#${current.official_number} · ` : ""}
-          {current.venue ?? "Sin sede"}
-          {current.champion ? ` · ${current.champion}` : ""}
-          {current.runner_up ? ` vs ${current.runner_up}` : ""}
-        </p>
-        {roleChip(current.role)}
+      <TitleEditor key={current.id} current={current} onSave={onSave} />
+    </div>
+  );
+}
+
+function TitleEditor({
+  current,
+  onSave,
+}: {
+  current: TeamDossierTitle;
+  onSave: (patch: { id: number; venue?: string | null; notes?: string | null; photo_path?: string | null; photo_id?: number | null }) => void;
+}) {
+  const [venue, setVenue] = useState(current.venue ?? "");
+  const [notes, setNotes] = useState(current.notes ?? "");
+  const [photo, setPhoto] = useState(current.photo_path ?? "");
+  useEffect(() => {
+    setVenue(current.venue ?? "");
+    setNotes(current.notes ?? "");
+    setPhoto(current.photo_path ?? "");
+  }, [current]);
+  return (
+    <div className="td-camp-view">
+      {current.photo || current.thumb ? <img src={current.photo || current.thumb || ""} alt="" /> : <p className="pd-empty">Sin foto</p>}
+      <h3>{current.label}</h3>
+      <p className="pd-empty" style={{ marginTop: 0 }}>
+        {current.official_number ? `#${current.official_number} · ` : ""}
+        {current.champion ?? ""}
+        {current.runner_up ? ` vs ${current.runner_up}` : ""}
+      </p>
+      {roleChip(current.role)}
+      <div className="td-edit" style={{ marginTop: "0.9rem" }}>
+        <label>
+          Sede
+          <input
+            type="text"
+            value={venue}
+            onChange={(event) => setVenue(event.target.value)}
+            onBlur={() => {
+              if ((venue.trim() || null) !== (current.venue ?? null)) onSave({ id: current.id, venue: venue.trim() || null });
+            }}
+          />
+        </label>
+        <label>
+          Nota
+          <textarea
+            rows={3}
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
+            onBlur={() => {
+              if ((notes.trim() || null) !== (current.notes ?? null)) onSave({ id: current.id, notes: notes.trim() || null });
+            }}
+          />
+        </label>
+        <label>
+          Foto (URL)
+          <input
+            type="url"
+            value={photo}
+            onChange={(event) => setPhoto(event.target.value)}
+            onBlur={() => {
+              if ((photo.trim() || "") !== (current.photo_path ?? "")) {
+                onSave({ id: current.id, photo_path: photo.trim(), photo_id: current.photo_id });
+              }
+            }}
+          />
+        </label>
       </div>
     </div>
   );
 }
 
-function Campana({ data }: { data: TeamDossier }) {
-  if (!data.matches.length) return <p className="pd-empty">Sin partidos</p>;
+function Campana({ data, campaign, onCampaign }: { data: TeamDossier; campaign: string; onCampaign: (value: string) => void }) {
   return (
-    <div className="pd-log">
-      {data.matches.map((m) => (
-        <Link key={m.match_id} className="pd-match" href={`/admin/partidos/${m.match_id}`}>
-          <div>
-            <b>F{m.matchday_number}</b>
-            <small>{fmtDate(m.played_on)}</small>
-          </div>
-          <div>
-            <strong>
-              {m.is_home ? "Local" : "Visita"} · {m.opponent}
-            </strong>
-            <small>
-              {m.status === "played" ? `${m.home_goals}-${m.away_goals}` : m.status}
-              {m.kickoff_time ? ` · ${m.kickoff_time.slice(0, 5)}` : ""}
-              {m.motm_name ? ` · ★ ${m.motm_name}` : ""}
-            </small>
-          </div>
-          <div className="side">
-            {m.result ? <span className={`pd-chip ${m.result === "W" ? "win" : m.result === "L" ? "loss" : "draw"}`}>{m.result}</span> : null}
-          </div>
-        </Link>
-      ))}
+    <div>
+      <section className="pd-card td-edit" style={{ marginBottom: "0.85rem" }}>
+        <h3>Nota de campaña</h3>
+        <textarea rows={3} maxLength={280} value={campaign} onChange={(event) => onCampaign(event.target.value)} />
+        <small>{campaign.length}/280</small>
+      </section>
+      {data.matches.length === 0 ? (
+        <p className="pd-empty">Sin partidos</p>
+      ) : (
+        <div className="pd-log">
+          {data.matches.map((m) => (
+            <Link key={m.match_id} className="pd-match" href={`/admin/partidos/${m.match_id}`}>
+              <div>
+                <b>F{m.matchday_number}</b>
+                <small>{fmtDate(m.played_on)}</small>
+              </div>
+              <div>
+                <strong>
+                  {m.is_home ? "Local" : "Visita"} · {m.opponent}
+                </strong>
+                <small>
+                  {m.status === "played" ? `${m.home_goals}-${m.away_goals}` : m.status}
+                  {m.kickoff_time ? ` · ${m.kickoff_time.slice(0, 5)}` : ""}
+                  {m.motm_name ? ` · ★ ${m.motm_name}` : ""}
+                </small>
+              </div>
+              <div className="side">
+                {m.result ? <span className={`pd-chip ${m.result === "W" ? "win" : m.result === "L" ? "loss" : "draw"}`}>{m.result}</span> : null}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -649,52 +1083,44 @@ function Campana({ data }: { data: TeamDossier }) {
 function Ficha({
   name,
   slug,
+  shortName,
   founding,
   dissolved,
-  pending,
-  msg,
   onName,
   onSlug,
+  onShort,
   onFounding,
   onDissolved,
-  onSave,
 }: {
   name: string;
   slug: string;
+  shortName: string;
   founding: boolean;
   dissolved: boolean;
-  pending: boolean;
-  msg: string | null;
   onName: (value: string) => void;
   onSlug: (value: string) => void;
+  onShort: (value: string) => void;
   onFounding: (value: boolean) => void;
   onDissolved: (value: boolean) => void;
-  onSave: () => void;
 }) {
   return (
     <div className="td-form">
-      {msg ? <p className="adm-alert">{msg}</p> : null}
       <label>
         Nombre
         <input type="text" value={name} onChange={(event) => onName(event.target.value)} />
       </label>
       <label>
+        Nombre corto
+        <input type="text" value={shortName} maxLength={24} onChange={(event) => onShort(event.target.value)} />
+      </label>
+      <label>
         Slug
         <input type="text" value={slug} onChange={(event) => onSlug(event.target.value)} />
       </label>
-      <label className="tm-flag">
-        <input type="checkbox" checked={founding} onChange={(event) => onFounding(event.target.checked)} />
-        <span className="tm-switch" />
-        Fundador
-      </label>
-      <label className="tm-flag">
-        <input type="checkbox" checked={dissolved} onChange={(event) => onDissolved(event.target.checked)} />
-        <span className="tm-switch" />
-        Disuelto
-      </label>
-      <button className="adm-btn" type="button" disabled={pending || !name.trim()} onClick={onSave}>
-        {pending ? "Guardando" : "Guardar"}
-      </button>
+      <div className="td-flags">
+        <Flag on={founding} label="Fundador" onToggle={onFounding} />
+        <Flag on={dissolved} label="Disuelto" onToggle={onDissolved} />
+      </div>
     </div>
   );
 }

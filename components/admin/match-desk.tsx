@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { getMatchWorkspace, saveMatchDesk, savePlayer } from "@/app/admin/actions";
 import { IconChevL, IconChevR } from "@/components/admin/icons";
+import { useAdminData } from "@/components/admin/store";
 import type { AppearanceRow, EventKind, MatchEventRow, PlayerRow } from "@/lib/admin/types";
 import "@/app/admin/match-desk.css";
 
@@ -136,6 +137,7 @@ function kindLabel(kind: EventKind) {
 }
 
 export function MatchDesk({ matchId }: { matchId: number }) {
+  const { openPlayer } = useAdminData();
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [loaded, setLoaded] = useState(false);
@@ -583,7 +585,20 @@ export function MatchDesk({ matchId }: { matchId: number }) {
               <p className="adm-k">Relato</p>
               <div className="md-timeline">
                 {timeline.map((e) => (
-                  <div className="md-tl" key={e.key}>
+                  <div
+                    className={`md-tl${typeof e.playerId === "number" ? " pd-row" : ""}`}
+                    key={e.key}
+                    role={typeof e.playerId === "number" ? "button" : undefined}
+                    tabIndex={typeof e.playerId === "number" ? 0 : undefined}
+                    onClick={() => typeof e.playerId === "number" && openPlayer(e.playerId, allPlayers.map((p) => p.id))}
+                    onKeyDown={(event) => {
+                      if (typeof e.playerId !== "number") return;
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openPlayer(e.playerId, allPlayers.map((p) => p.id));
+                      }
+                    }}
+                  >
                     <b>{minuteLabel(e)}</b>
                     <span className={`md-dot ${e.kind}`} />
                     <span>
@@ -763,10 +778,13 @@ export function MatchDesk({ matchId }: { matchId: number }) {
       ) : null}
 
       <div className="md-pager">
-        <button className="adm-btn ghost" type="button" disabled={step === 0} onClick={() => go(step - 1)}>
-          <IconChevL />
-          Volver
-        </button>
+        {step > 0 ? (
+          <button className="adm-iconbtn" type="button" title="Anterior" aria-label="Anterior" onClick={() => go(step - 1)}>
+            <IconChevL />
+          </button>
+        ) : (
+          <span />
+        )}
         <span>
           {step + 1} / {TABS.length}
         </span>

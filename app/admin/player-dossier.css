@@ -2,6 +2,10 @@
   cursor: pointer;
 }
 
+tr.pd-row:hover td {
+  background: rgba(228, 184, 74, 0.06);
+}
+
 .pd-row:focus-visible td {
   outline: 2px solid var(--gold);
   outline-offset: -2px;

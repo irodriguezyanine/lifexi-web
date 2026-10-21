@@ -1,14 +1,25 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { MatchStatus, TeamDossier, TeamDossierMatch, TeamDossierPlayer, TeamDossierTitle } from "@/lib/admin/types";
 import { publicSrc } from "@/lib/media";
 
-type Result<T> = { ok: true; data: T } | { ok: false; error: string };
+type Result<T = unknown> = { ok: true; data?: T } | { ok: false; error: string };
+
+const PROFILE_SLUG = "team_profiles";
+
+type TeamProfile = { bio?: string; campaign?: string };
+type TeamProfiles = Record<string, TeamProfile>;
 
 function fail(error: string): Result<never> {
   return { ok: false, error };
+}
+
+function touchPublic() {
+  revalidatePath("/");
+  revalidatePath("/api/public/liga");
 }
 
 function resultOf(
@@ -23,6 +34,23 @@ function resultOf(
   if (gf > ga) return "W";
   if (gf < ga) return "L";
   return "D";
+}
+
+function readProfiles(extra: unknown, body: string | null | undefined): TeamProfiles {
+  if (extra && typeof extra === "object" && !Array.isArray(extra)) return extra as TeamProfiles;
+  if (body) {
+    try {
+      const parsed = JSON.parse(body) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed as TeamProfiles;
+    } catch {
+      /* ignore */
+    }
+  }
+  return {};
+}
+
+function shotKey(value: string | null | undefined) {
+  return value ?? "5";
 }
 
 export async function getTeamDossier(teamId: number): Promise<Result<TeamDossier>> {
@@ -42,12 +70,12 @@ export async function getTeamDossier(teamId: number): Promise<Result<TeamDossier
     const { data: season } = await sb.from("seasons").select("*").limit(1).single();
     if (!season) return fail("Sin temporada");
 
-    const [playersRes, allPlayersRes, statsRes, mediaRes, tournamentsRes, calendarRes, standingsRes, appearancesRes, teamsRes, finalistsRes] =
+    const [playersRes, allPlayersRes, statsRes, mediaRes, tournamentsRes, calendarRes, standingsRes, appearancesRes, teamsRes, finalistsRes, profilesRes] =
       await Promise.all([
         sb.from("players").select("id, full_name, team_id, source_index, season_id").eq("team_id", id).order("full_name"),
         sb.from("players").select("id, full_name, team_id, season_id").eq("season_id", season.id),
         sb.from("v_player_season_stats").select("*").eq("season_id", season.id),
-        sb.from("media").select("kind, object_path, caption, team_id, historical_tournament_id, width, height"),
+        sb.from("media").select("id, kind, object_path, caption, team_id, historical_tournament_id, width, height, sort_key"),
         sb.from("historical_tournaments").select("*").order("sort_order"),
         sb.from("v_match_calendar").select("*").eq("season_id", season.id).order("matchday_number").order("sort_order"),
         sb.rpc("season_standings", {
@@ -57,29 +85,63 @@ export async function getTeamDossier(teamId: number): Promise<Result<TeamDossier
         sb.from("match_appearances").select("player_id, team_id, goals, yellows, reds, is_motm").eq("team_id", id),
         sb.from("teams").select("id, name"),
         sb.from("v_finalists").select("*").eq("team_id", id).maybeSingle(),
+        sb.from("site_content").select("extra, body").eq("slug", PROFILE_SLUG).maybeSingle(),
       ]);
 
     const teamNames = new Map((teamsRes.data ?? []).map((row: { id: number; name: string }) => [row.id, row.name]));
     const media = (mediaRes.data ?? []) as {
+      id: number;
       kind: string;
       object_path: string;
       caption: string | null;
       team_id: number | null;
       historical_tournament_id: number | null;
+      sort_key: string | null;
     }[];
-    const logo = publicSrc(media.find((row) => row.kind === "team_logo" && row.team_id === id)?.object_path);
+    const logoRow = media.find((row) => row.kind === "team_logo" && row.team_id === id);
+    const logo = publicSrc(logoRow?.object_path);
     const squad_photos = media
       .filter((row) => row.kind === "squad_photo" && row.team_id === id)
-      .map((row) => ({ src: publicSrc(row.object_path) ?? "", caption: row.caption }))
-      .filter((row) => row.src);
-    const photoByTournament = new Map<number, { photo: string | null; thumb: string | null }>();
+      .map((row) => ({
+        id: row.id,
+        src: publicSrc(row.object_path) ?? "",
+        path: row.object_path,
+        caption: row.caption,
+        sort_key: row.sort_key,
+      }))
+      .filter((row) => row.src)
+      .sort((a, b) => shotKey(a.sort_key).localeCompare(shotKey(b.sort_key)) || a.id - b.id);
+
+    type TitlePics = {
+      photo: string | null;
+      thumb: string | null;
+      photo_id: number | null;
+      thumb_id: number | null;
+      photo_path: string | null;
+      thumb_path: string | null;
+    };
+    const photoByTournament = new Map<number, TitlePics>();
     for (const row of media) {
       if (!row.historical_tournament_id) continue;
       if (row.kind !== "champion_photo" && row.kind !== "champion_thumb") continue;
-      const cur = photoByTournament.get(row.historical_tournament_id) ?? { photo: null, thumb: null };
+      const cur = photoByTournament.get(row.historical_tournament_id) ?? {
+        photo: null,
+        thumb: null,
+        photo_id: null,
+        thumb_id: null,
+        photo_path: null,
+        thumb_path: null,
+      };
       const src = publicSrc(row.object_path);
-      if (row.kind === "champion_photo") cur.photo = src;
-      else cur.thumb = src;
+      if (row.kind === "champion_photo") {
+        cur.photo = src;
+        cur.photo_id = row.id;
+        cur.photo_path = row.object_path;
+      } else {
+        cur.thumb = src;
+        cur.thumb_id = row.id;
+        cur.thumb_path = row.object_path;
+      }
       photoByTournament.set(row.historical_tournament_id, cur);
     }
     const stats = (statsRes.data ?? []) as {
@@ -160,8 +222,14 @@ export async function getTeamDossier(teamId: number): Promise<Result<TeamDossier
           role: role ?? "current",
           champion: row.champion_team_id ? (teamNames.get(row.champion_team_id) ?? null) : null,
           runner_up: row.runner_up_team_id ? (teamNames.get(row.runner_up_team_id) ?? null) : null,
+          champion_team_id: row.champion_team_id,
+          runner_up_team_id: row.runner_up_team_id,
           photo: pics?.photo ?? pics?.thumb ?? null,
           thumb: pics?.thumb ?? pics?.photo ?? null,
+          photo_id: pics?.photo_id ?? null,
+          thumb_id: pics?.thumb_id ?? null,
+          photo_path: pics?.photo_path ?? null,
+          thumb_path: pics?.thumb_path ?? null,
         };
       })
       .filter((row): row is TeamDossierTitle => row != null);
@@ -208,6 +276,7 @@ export async function getTeamDossier(teamId: number): Promise<Result<TeamDossier
     );
     const finalists = finalistsRes.data as { finals_played: number; finals_won: number } | null;
     const champTitles = titles.filter((row) => row.role === "champion");
+    const profile = readProfiles(profilesRes.data?.extra, profilesRes.data?.body)[String(id)] ?? {};
 
     return {
       ok: true,
@@ -216,9 +285,14 @@ export async function getTeamDossier(teamId: number): Promise<Result<TeamDossier
           id: team.id,
           name: team.name,
           slug: team.slug,
+          short_name: team.short_name ?? null,
+          bio: profile.bio ?? "",
+          campaign: profile.campaign ?? "",
           is_dissolved: team.is_dissolved,
           is_founding_team: team.is_founding_team,
           logo,
+          logo_id: logoRow?.id ?? null,
+          logo_path: logoRow?.object_path ?? null,
           squad_photos,
         },
         season: {
@@ -260,4 +334,218 @@ export async function getTeamDossier(teamId: number): Promise<Result<TeamDossier
   } catch (error) {
     return fail(error instanceof Error ? error.message : "No se pudo cargar");
   }
+}
+
+async function upsertProfiles(sb: ReturnType<typeof createAdminClient>, teamId: number, patch: TeamProfile) {
+  const { data } = await sb.from("site_content").select("id, extra, body").eq("slug", PROFILE_SLUG).maybeSingle();
+  const profiles = readProfiles(data?.extra, data?.body);
+  const key = String(teamId);
+  profiles[key] = { ...profiles[key], ...patch };
+  const extra = profiles;
+  const body = JSON.stringify(profiles);
+  if (data?.id) {
+    await sb.from("site_content").update({ extra, body, updated_at: new Date().toISOString() }).eq("id", data.id);
+    return;
+  }
+  await sb.from("site_content").insert({
+    slug: PROFILE_SLUG,
+    area: "equipos",
+    title: "Perfiles de equipos",
+    body,
+    is_visible: false,
+    sort_order: 970,
+    extra,
+  });
+}
+
+export async function saveTeamProfile(input: {
+  teamId: number;
+  bio?: string;
+  campaign?: string;
+}): Promise<Result> {
+  try {
+    await requireAdmin();
+  } catch {
+    return fail("Sesión vencida");
+  }
+  const sb = createAdminClient();
+  await upsertProfiles(sb, input.teamId, {
+    ...(input.bio !== undefined ? { bio: input.bio } : {}),
+    ...(input.campaign !== undefined ? { campaign: input.campaign } : {}),
+  });
+  touchPublic();
+  return { ok: true };
+}
+
+export async function saveTeamMedia(input: {
+  id?: number;
+  team_id?: number | null;
+  kind: "team_logo" | "squad_photo" | "champion_photo" | "champion_thumb";
+  object_path: string;
+  caption?: string | null;
+  historical_tournament_id?: number | null;
+  cover?: boolean;
+}): Promise<Result<{ id: number }>> {
+  try {
+    await requireAdmin();
+  } catch {
+    return fail("Sesión vencida");
+  }
+  const path = input.object_path.trim();
+  if (!path) return fail("Falta la URL");
+  const sb = createAdminClient();
+  let id = input.id ?? null;
+
+  if (id) {
+    const { error } = await sb
+      .from("media")
+      .update({
+        object_path: path,
+        caption: input.caption ?? null,
+        team_id: input.team_id ?? null,
+        historical_tournament_id: input.historical_tournament_id ?? null,
+      })
+      .eq("id", id);
+    if (error) return fail(error.message);
+  } else if (input.kind === "team_logo" && input.team_id) {
+    const { data: existing } = await sb.from("media").select("id").eq("kind", "team_logo").eq("team_id", input.team_id).maybeSingle();
+    if (existing?.id) {
+      const { error } = await sb.from("media").update({ object_path: path, caption: input.caption ?? null }).eq("id", existing.id);
+      if (error) return fail(error.message);
+      id = existing.id;
+    }
+  } else if (input.kind === "champion_photo" && input.historical_tournament_id) {
+    const { data: existing } = await sb
+      .from("media")
+      .select("id")
+      .eq("kind", "champion_photo")
+      .eq("historical_tournament_id", input.historical_tournament_id)
+      .maybeSingle();
+    if (existing?.id) {
+      const { error } = await sb
+        .from("media")
+        .update({ object_path: path, caption: input.caption ?? null, team_id: input.team_id ?? null })
+        .eq("id", existing.id);
+      if (error) return fail(error.message);
+      id = existing.id;
+    }
+  }
+
+  if (!id) {
+    const { data, error } = await sb
+      .from("media")
+      .insert({
+        kind: input.kind,
+        object_path: path,
+        caption: input.caption ?? null,
+        team_id: input.team_id ?? null,
+        historical_tournament_id: input.historical_tournament_id ?? null,
+        sort_key: input.cover ? "0" : "5",
+      })
+      .select("id")
+      .single();
+    if (error || !data) return fail(error?.message ?? "No se pudo guardar");
+    id = data.id;
+  }
+
+  if (!id) return fail("No se pudo guardar");
+  if (input.cover && input.team_id) {
+    await promoteCover(sb, input.team_id, id);
+  }
+  touchPublic();
+  return { ok: true, data: { id } };
+}
+
+export async function saveTeamCaption(input: { id: number; caption: string | null }): Promise<Result> {
+  try {
+    await requireAdmin();
+  } catch {
+    return fail("Sesión vencida");
+  }
+  const sb = createAdminClient();
+  const { error } = await sb.from("media").update({ caption: input.caption }).eq("id", input.id);
+  if (error) return fail(error.message);
+  touchPublic();
+  return { ok: true };
+}
+
+export async function setSquadCover(input: { teamId: number; mediaId: number }): Promise<Result> {
+  try {
+    await requireAdmin();
+  } catch {
+    return fail("Sesión vencida");
+  }
+  const sb = createAdminClient();
+  await promoteCover(sb, input.teamId, input.mediaId);
+  touchPublic();
+  return { ok: true };
+}
+
+export async function deleteTeamMedia(input: { id: number }): Promise<Result> {
+  try {
+    await requireAdmin();
+  } catch {
+    return fail("Sesión vencida");
+  }
+  const sb = createAdminClient();
+  const { error } = await sb.from("media").delete().eq("id", input.id);
+  if (error) return fail(error.message);
+  touchPublic();
+  return { ok: true };
+}
+
+export async function saveTeamTitle(input: {
+  id: number;
+  venue?: string | null;
+  notes?: string | null;
+  photo_path?: string | null;
+  photo_id?: number | null;
+  team_id?: number | null;
+}): Promise<Result> {
+  try {
+    await requireAdmin();
+  } catch {
+    return fail("Sesión vencida");
+  }
+  const sb = createAdminClient();
+  const patch: { venue?: string | null; notes?: string | null } = {};
+  if (input.venue !== undefined) patch.venue = input.venue?.trim() || null;
+  if (input.notes !== undefined) patch.notes = input.notes?.trim() || null;
+  if (Object.keys(patch).length) {
+    const { error } = await sb.from("historical_tournaments").update(patch).eq("id", input.id);
+    if (error) return fail(error.message);
+  }
+  if (input.photo_path !== undefined) {
+    const path = (input.photo_path ?? "").trim();
+    if (!path) {
+      if (input.photo_id) {
+        const { error } = await sb.from("media").delete().eq("id", input.photo_id);
+        if (error) return fail(error.message);
+      }
+    } else {
+      const res = await saveTeamMedia({
+        id: input.photo_id ?? undefined,
+        kind: "champion_photo",
+        object_path: path,
+        historical_tournament_id: input.id,
+        team_id: input.team_id ?? null,
+      });
+      if (!res.ok) return res;
+    }
+  }
+  touchPublic();
+  return { ok: true };
+}
+
+async function promoteCover(sb: ReturnType<typeof createAdminClient>, teamId: number, mediaId: number) {
+  const { data } = await sb.from("media").select("id").eq("kind", "squad_photo").eq("team_id", teamId).order("id");
+  const rows = (data ?? []) as { id: number }[];
+  await Promise.all(
+    rows.map((row, index) =>
+      sb
+        .from("media")
+        .update({ sort_key: row.id === mediaId ? "0" : String(index + 1) })
+        .eq("id", row.id),
+    ),
+  );
 }

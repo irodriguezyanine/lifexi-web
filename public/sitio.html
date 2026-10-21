@@ -1364,12 +1364,14 @@
       </div>
     </div>
     <p class="dia" id="eq-resumen"></p>
+    <p class="nota" id="eq-bio" hidden></p>
 
     <ul class="fichas" id="fichas" aria-label="Elegir equipo"></ul>
 
     <section class="plantel-foto" aria-labelledby="h-eqplantel">
       <h2 id="h-eqplantel">Plantel actual</h2>
       <figure class="panel" id="eq-plantel-marco" hidden><img id="eq-plantel-img" alt=""><figcaption class="nota" id="eq-plantel-pie" hidden></figcaption></figure>
+      <ul class="galeria" id="eq-plantel-extra" hidden></ul>
       <p class="nota" id="eq-plantel-nota" hidden>Falta la foto del plantel actual de este equipo.</p>
     </section>
 
@@ -1391,6 +1393,7 @@
     <div class="cols">
       <section aria-labelledby="h-eqres">
         <h2 id="h-eqres">Partidos fecha a fecha</h2>
+        <p class="nota" id="eq-camp-nota" hidden></p>
         <div class="panel recorta">
           <ol class="partidos" id="eq-partidos"></ol>
         </div>
@@ -2740,6 +2743,8 @@ function aplicarLiga(data) {
     if (row) {
       if (t.champion) row.c = t.champion;
       if (t.runner_up) row.s = t.runner_up;
+      if (t.venue) row.lugar = t.venue;
+      if (t.notes) row.nota = t.notes;
       if (t.photo) {
         var fo = FOTOS[row.t] || [1400, 933, t.photo, t.thumb || t.photo];
         FOTOS[row.t] = [fo[0], fo[1], t.photo, t.thumb || fo[3] || t.photo];
@@ -2828,10 +2833,14 @@ function aplicarLiga(data) {
     });
   });
   if (maxPlayed) ULTIMA = Math.max(ULTIMA, maxPlayed);
-  if (data.sanctions && data.sanctions.length) {
+  if (data.sanctions) {
     SANCIONES = data.sanctions
-      .filter(function (s) { return s.player_source_index != null; })
-      .map(function (s) { return [s.player_source_index, s.detail, s.sanction]; });
+      .filter(function (s) { return s.player_source_index != null && s.active !== false; })
+      .map(function (s) {
+        var texto = s.sanction;
+        if (s.remaining != null && s.remaining > 0) texto = s.remaining === 1 ? "1 fecha" : s.remaining + " fechas";
+        return [s.player_source_index, s.detail, texto];
+      });
   }
   (data.content || []).forEach(function (c) {
     if (c.slug === "home_subtitle" && c.title) {
@@ -3566,6 +3575,10 @@ if (typeof document !== "undefined") (function () {
   });
 
   function pintarCampana(i) {
+    var nota = $("eq-camp-nota"), texto = "";
+    if (LIGA && LIGA.teams) LIGA.teams.forEach(function (t) { if (t.source_index === i && t.campaign) texto = t.campaign; });
+    nota.hidden = !texto;
+    nota.textContent = texto;
     var ol = $("eq-partidos");
     ol.textContent = "";
     var cabLi = el("li", "partido"), cab = el("div", "fila cab");
@@ -3691,6 +3704,21 @@ if (typeof document !== "undefined") (function () {
     var f = PLANTELES[i], im = $("eq-plantel-img");
     $("eq-plantel-marco").hidden = !f;
     $("eq-plantel-nota").hidden = !!f;
+    var extra = $("eq-plantel-extra"), shots = [];
+    extra.textContent = "";
+    if (LIGA && LIGA.teams) LIGA.teams.forEach(function (t) {
+      if (t.source_index === i) shots = t.squad_photos || [];
+    });
+    extra.hidden = shots.length < 2;
+    shots.slice(1).forEach(function (s) {
+      var li = el("li"), img = el("img");
+      img.src = s.src;
+      img.alt = s.caption || "";
+      img.loading = "lazy";
+      li.appendChild(img);
+      if (s.caption) li.appendChild(el("span", "pie", s.caption));
+      extra.appendChild(li);
+    });
     if (!f) { im.removeAttribute("src"); im.alt = ""; return; }
     im.width = f[0]; im.height = f[1];
     im.alt = "Plantel actual de " + EQUIPOS[i] + (f[3] ? " (" + f[3] + ")" : "");
@@ -3727,7 +3755,11 @@ if (typeof document !== "undefined") (function () {
       });
       imgG.src = rutaFoto(f.t, false);
       imgG.alt = "Campeón " + f.t;
-      pie.textContent = f.t + (f.c ? " · " + f.c : "");
+      var extra = "";
+      if (LIGA && LIGA.tournaments) LIGA.tournaments.forEach(function (t) {
+        if (t.label === f.t) extra = [t.venue, t.notes].filter(Boolean).join(" · ");
+      });
+      pie.textContent = f.t + (f.c ? " · " + f.c : "") + (extra ? " · " + extra : "");
     }
     fotos.forEach(function (f, n) {
       var tab = el("button");
@@ -3820,10 +3852,12 @@ if (typeof document !== "undefined") (function () {
     chips.textContent = "";
     function chip(txt) { chips.appendChild(el("span", "eq-chip", txt)); }
     chip(pos + ".º");
+    var live = null;
     if (LIGA && LIGA.teams) {
-      var live = null;
       LIGA.teams.forEach(function (t) { if (t.source_index === i) live = t; });
+      if (!live) LIGA.teams.forEach(function (t) { if (t.name === EQUIPOS[i]) live = t; });
       if (live) {
+        if (live.short_name && live.short_name !== live.name) chip(live.short_name);
         if (live.is_founding_team) chip("Fundador");
         if (live.is_dissolved) chip("Disuelto");
         if (live.titles) chip(live.titles === 1 ? "1 título" : live.titles + " títulos");
@@ -3833,6 +3867,9 @@ if (typeof document !== "undefined") (function () {
       pos + ".º de la tabla con " + r.pts + (r.pts === 1 ? " punto" : " puntos") + ". Jugó " + r.pj +
       (r.pj === 1 ? " partido" : " partidos") + ": ganó " + r.pg + ", empató " + r.pe + " y perdió " + r.pp +
       ". Goles: " + r.gf + " a favor y " + r.gc + " en contra. Fair Play: " + r.fp + ".";
+    var bio = $("eq-bio");
+    if (live && live.bio) { bio.hidden = false; bio.textContent = live.bio; }
+    else { bio.hidden = true; bio.textContent = ""; }
     ORDEN.forEach(function (x) {
       if (x === i) fichas[x].setAttribute("aria-current", "true");
       else fichas[x].removeAttribute("aria-current");
