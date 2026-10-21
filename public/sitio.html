@@ -1,0 +1,4010 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="img/logo-lifexi.webp">
+<title>LIFEXI 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EDF1EC;
+    --surface: #FFFFFF;
+    --ink: #14261E;
+    --muted: #5C6B64;
+    --line: #D3DCD5;
+    --accent: #C8102E;
+    --accent-ink: #FFFFFF;
+    --pending: #8A6100;
+    --pending-bg: #FBEFC9;
+    --up: #1B7A49;
+    --down: #B3261E;
+    --lead: #F6F8F5;
+    --rueda1: #1F6F8B;
+    --rueda2: #B4690E;
+
+    --display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+    --body: "Barlow", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1814;
+      --surface: #17231D;
+      --ink: #E7EEE9;
+      --muted: #94A49B;
+      --line: #2A3A32;
+      --accent: #E8394F;
+      --accent-ink: #FFFFFF;
+      --pending: #F0C75A;
+      --pending-bg: #3A3013;
+      --up: #5CC58C;
+      --down: #FF8177;
+      --lead: #1C2A23;
+      --rueda1: #5DB7D6;
+      --rueda2: #E9A23B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1814;
+    --surface: #17231D;
+    --ink: #E7EEE9;
+    --muted: #94A49B;
+    --line: #2A3A32;
+    --accent: #E8394F;
+    --accent-ink: #FFFFFF;
+    --pending: #F0C75A;
+    --pending-bg: #3A3013;
+    --up: #5CC58C;
+    --down: #FF8177;
+    --lead: #1C2A23;
+    --rueda1: #5DB7D6;
+    --rueda2: #E9A23B;
+  }
+
+  *, *::before, *::after { box-sizing: inherit; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 1rem;
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap {
+    max-width: 68rem;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 3rem;
+  }
+  [hidden] { display: none !important; }
+
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Encabezado y vistas */
+  .marca { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.9rem; }
+  .logo-liga { width: 4.5rem; height: 4.5rem; flex-shrink: 0; }
+  .marca-txt { min-width: 0; }
+  .marca-nombre {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 2.8rem;
+    line-height: 0.9;
+    letter-spacing: 0.01em;
+    color: var(--accent);
+  }
+  .marca .liga { margin-top: 0.25rem; }
+  .obra {
+    margin-left: auto;
+    padding: 0.35rem 0.8rem;
+    border: 1px dashed var(--pending);
+    border-radius: 999px;
+    background: var(--pending-bg);
+    color: var(--pending);
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .liga {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  .vistas {
+    display: flex;
+    gap: 1.6rem;
+    margin: 0.6rem 0 1.6rem;
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+    flex-wrap: wrap;
+    row-gap: 0;
+    scrollbar-width: none;
+  }
+  .vistas::-webkit-scrollbar { display: none; }
+  .vistas button {
+    padding: 0.6rem 0;
+    margin-bottom: -1px;
+    background: none;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    color: var(--muted);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .vistas button:hover { color: var(--ink); }
+  .vistas button[aria-selected="true"] {
+    color: var(--ink);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+  }
+  .vistas button:focus-visible { outline-offset: -3px; }
+
+  .cabecera {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(3.25rem, 11vw, 6rem);
+    line-height: 0.9;
+    letter-spacing: -0.01em;
+  }
+  h1.largo {
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    line-height: 0.95;
+  }
+  .dia {
+    margin: 0.5rem 0 0;
+    font-size: 1.05rem;
+    max-width: 70ch;
+  }
+  .pasos {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .paso {
+    padding: 0.55rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.4rem;
+    font-weight: 500;
+  }
+  .paso:hover:not(:disabled) { border-color: var(--ink); }
+  .paso:disabled { opacity: 0.4; cursor: default; }
+
+  /* Selector de fecha, separado en primera y segunda rueda */
+  .ruedas {
+    display: grid;
+    grid-template-columns: minmax(0, 9fr) minmax(0, 7fr);
+    gap: 1.1rem;
+    margin: 1.5rem 0 2rem;
+  }
+  .rueda-cab {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0 0 0.4rem;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.05rem;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+  .rueda-cab::after { content: ""; flex: 1; height: 2px; background: var(--rueda); }
+  .rueda-cab .punto, .etiqueta-rueda .punto {
+    width: 0.6rem;
+    height: 0.6rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--rueda);
+  }
+  .r1 { --rueda: var(--rueda1); }
+  .r2 { --rueda: var(--rueda2); }
+  .etiqueta-rueda {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.1rem 0.55rem 0.1rem 0.45rem;
+    margin-right: 0.5rem;
+    border: 1px solid var(--rueda);
+    border-radius: 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+    vertical-align: 0.08em;
+  }
+  .riel {
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* Separador de rueda dentro de una lista de partidos */
+  .partido.sep { border-top: 1px solid var(--line); background: var(--lead); }
+  .partido.sep:first-child { border-top: 0; }
+  .partido.sep .rueda-cab { margin: 0; padding: 0.5rem 1rem; }
+  .sim-rueda { margin: 0 0 0.75rem; }
+  .riel button {
+    width: 100%;
+    padding: 0.45rem 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.4rem;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.35rem;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .fichas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 1.5rem 0 2rem;
+    padding: 0;
+    list-style: none;
+  }
+  .fichas button {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem 0.4rem 0.5rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.4rem;
+    font-weight: 500;
+    font-size: 0.95rem;
+    line-height: 1.2;
+  }
+  .riel button.futura { border-style: dashed; color: var(--muted); }
+  .riel button.futura[aria-current="true"] { border-style: solid; color: var(--accent-ink); }
+  .riel button:hover, .fichas button:hover { border-color: var(--ink); }
+  .riel button[aria-current="true"], .fichas button[aria-current="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .riel button[aria-current="true"]:focus-visible,
+  .fichas button[aria-current="true"]:focus-visible { outline-color: var(--ink); }
+
+  /* Logos de equipos: caja cuadrada con fondo blanco, como vienen en el sitio de la liga */
+  .logo {
+    width: 1.75rem;
+    height: 1.75rem;
+    flex-shrink: 0;
+    object-fit: contain;
+    background: #FFFFFF;
+    border-radius: 0.25rem;
+    vertical-align: middle;
+  }
+  .logo.chico { width: 1.3rem; height: 1.3rem; border-radius: 0.2rem; }
+  .logo.grande { width: 4.5rem; height: 4.5rem; border-radius: 0.5rem; }
+  .con-logo { display: flex; align-items: center; gap: 0.5rem; }
+  span.logo.sin {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--line);
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+  .eq-cab { display: flex; align-items: center; gap: 1rem; }
+
+  /* Dos columnas */
+  .cols {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 2rem;
+    align-items: start;
+  }
+  .cols.pares { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .cols.inv { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+  .cols.trios { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; }
+  .trios .lista th, .trios .lista td { padding-left: 0.35rem; padding-right: 0.35rem; }
+  .trios .lista th.eq, .trios .lista td.eq { padding-left: 0.5rem; }
+  .trios .lista td.eq { min-width: 7rem; }
+  .trios .lista th.pos, .trios .lista td.pos { padding-left: 0.85rem; }
+  .trios .lista th.pts, .trios .lista td.pts { padding-right: 0.85rem; }
+  @media (max-width: 1040px) {
+    .cols.trios { grid-template-columns: minmax(0, 1fr); gap: 1.75rem; }
+  }
+  h2 {
+    margin: 0 0 0.75rem;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.6rem;
+    line-height: 1.1;
+  }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.6rem;
+  }
+
+  /* Resultados de una fecha */
+  .recorta { overflow: hidden; }
+  .partidos { margin: 0; padding: 0; list-style: none; }
+  .partido { border-top: 1px solid var(--line); }
+  .partido:first-child { border-top: 0; }
+  .abrir {
+    display: block;
+    width: 100%;
+    padding: 0.85rem 1rem 0.9rem;
+    background: none;
+    border: 0;
+    text-align: inherit;
+  }
+  button.abrir:hover, button.fila:hover { background: var(--lead); }
+  button.abrir:focus-visible, button.fila:focus-visible { outline-offset: -3px; }
+  .cuando {
+    display: block;
+    margin: 0 0 0.35rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: center;
+  }
+  .marcador {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .equipo { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; line-height: 1.2; color: var(--muted); }
+  .equipo.local { justify-content: flex-end; text-align: right; }
+  .equipo.gana, .equipo.empata { color: var(--ink); }
+  .equipo.gana { font-weight: 600; }
+  .goles {
+    min-width: 5.6rem;
+    text-align: center;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 2rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .pendiente {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    background: var(--pending-bg);
+    color: var(--pending);
+    border-radius: 0.3rem;
+    font-family: var(--body);
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  .porjugar {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid var(--line);
+    border-radius: 0.3rem;
+    color: var(--muted);
+    font-family: var(--body);
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  .nota {
+    margin: 0.75rem 0 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+    max-width: 62ch;
+  }
+  .nota + .nota { margin-top: 0.4rem; }
+
+  /* Resultados de un equipo */
+  .fila {
+    display: grid;
+    grid-template-columns: 4.6rem minmax(0, 1fr) auto 2.6rem;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.65rem 1rem;
+    background: none;
+    border: 0;
+    text-align: left;
+  }
+  .fila.cab {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+  .fila .lugar {
+    text-align: right;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.35rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .fila.cab .lugar { font-family: var(--body); font-weight: 500; font-size: inherit; }
+  .fila .lugar.primero { color: var(--accent); }
+  .fila .n {
+    display: block;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.15rem;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+  .fila .d { display: block; color: var(--muted); font-size: 0.82rem; }
+  .cruce { line-height: 1.3; }
+  .cruce .yo { font-weight: 600; }
+  .cruce .yo, .cruce .otro { display: inline-block; vertical-align: baseline; }
+  .cruce .logo { margin-right: 0.3rem; vertical-align: -0.28em; }
+  .cruce .res {
+    padding: 0 0.3rem;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.3rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .cruce.vacio { color: var(--muted); }
+  .cruce .hora { display: block; color: var(--muted); font-size: 0.82rem; }
+  .fila .lugar.sinlugar { color: var(--muted); font-weight: 500; }
+  .sello {
+    padding: 0.15rem 0.5rem;
+    border: 1px solid currentColor;
+    border-radius: 0.3rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .sello.g { color: var(--up); }
+  .sello.e { color: var(--muted); }
+  .sello.p { color: var(--down); }
+
+  .enlace {
+    padding: 0;
+    background: none;
+    border: 0;
+    text-align: inherit;
+    font-weight: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+  .enlace:hover { text-decoration-color: currentColor; }
+
+  /* Detalle de un partido */
+  dialog {
+    width: min(46rem, calc(100vw - 1.5rem));
+    max-height: calc(100vh - 2rem);
+    padding: 0;
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 0.75rem;
+    overflow: auto;
+  }
+  .fi-caja { padding: 1.25rem; }
+  dialog::backdrop { background: rgba(8, 16, 12, 0.6); }
+  .fi-cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .fi-cuando { margin: 0; color: var(--muted); font-size: 0.92rem; }
+  .fi-marcador {
+    margin: 1.1rem 0 1.25rem;
+    font-family: var(--body);
+    font-size: 1.15rem;
+    font-weight: 400;
+    line-height: 1.2;
+  }
+  .fi-marcador .equipo { font-size: inherit; }
+  .fi-marcador .goles { font-size: 2.75rem; min-width: 6.5rem; }
+  .fi-lados {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+  }
+  .fi-lados h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.3rem;
+    line-height: 1.15;
+  }
+  .fi-cuenta { margin: 0.15rem 0 0.5rem; color: var(--muted); font-size: 0.85rem; }
+  .fi-lista { margin: 0; padding: 0; list-style: none; }
+  .fi-lista li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+    border-top: 1px solid var(--line);
+    line-height: 1.25;
+  }
+  .fi-lista li.con { font-weight: 600; }
+  .marcas { display: inline-flex; align-items: center; gap: 0.3rem; flex-shrink: 0; white-space: nowrap; }
+  .marcas .gol { font-size: 0.85rem; font-weight: 600; }
+  .marcas .estrella { font-size: 0.85rem; font-weight: 600; color: var(--pending); }
+  .marcas .auto { font-size: 0.85rem; font-weight: 400; color: var(--muted); }
+  .tarjeta {
+    display: inline-block;
+    width: 0.62rem;
+    height: 0.86rem;
+    border-radius: 2px;
+    vertical-align: -0.1em;
+  }
+  .tarjeta.am { background: #F2C230; }
+  .tarjeta.ro { background: #D7263D; }
+  .fi-leyenda { margin-top: 1rem; max-width: none; }
+
+  /* Tablas */
+  .deslizar { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+  th, td {
+    padding: 0.6rem 0.45rem;
+    text-align: right;
+    white-space: nowrap;
+  }
+  thead th {
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--line);
+  }
+  thead abbr { text-decoration: none; cursor: help; }
+  tbody tr { background: var(--surface); }
+  tbody td { border-top: 1px solid var(--line); }
+  tbody tr:first-child td { border-top: 0; }
+  th.eq, td.eq { text-align: left; }
+  td.eq { white-space: normal; min-width: 9.5rem; font-weight: 500; }
+  td.pos {
+    width: 2.2rem;
+    padding-left: 1rem;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.25rem;
+    text-align: left;
+  }
+  th.pos { padding-left: 1rem; text-align: left; }
+  td.mov { width: 2.6rem; font-size: 0.85rem; font-weight: 600; text-align: left; }
+  .sube { color: var(--up); }
+  .baja { color: var(--down); }
+  .igual { color: var(--muted); font-weight: 400; }
+  td.pts, th.pts { padding-right: 1rem; }
+  td.pts {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.35rem;
+  }
+  .posiciones td.pts, .posiciones th.pts { position: sticky; right: 0; }
+  .posiciones thead th.pts { background: var(--surface); }
+  .posiciones tbody td.pts { background: inherit; }
+  tbody tr.lider { background: var(--lead); }
+  tbody tr.lider td.pos { color: var(--accent); }
+
+  /* Tabla de jugadores y rankings */
+  .lista th.eq, .lista td.eq { padding-left: 1rem; }
+  .lista td.eq small {
+    display: block;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 400;
+  }
+  .lista td.fin, .lista th.fin { padding-right: 1rem; }
+  .lista td.eq small.castigo { color: var(--down); font-weight: 600; }
+  .lista td.pts .ast { margin-left: 0.1em; color: var(--accent); }
+  .lista td.cero { color: var(--muted); opacity: 0.6; }
+  .lista td.sinjugar { color: var(--muted); font-weight: 400; }
+  .ordenar {
+    padding: 0;
+    background: none;
+    border: 0;
+    color: inherit;
+    font-weight: inherit;
+  }
+  .ordenar:hover { color: var(--ink); }
+  th[aria-sort] .ordenar { color: var(--ink); font-weight: 600; }
+  .barra {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    flex-wrap: wrap;
+    margin: 0 0 0.75rem;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .barra label { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--ink); cursor: pointer; }
+  .barra input { width: 1.05rem; height: 1.05rem; accent-color: var(--accent); }
+  .mas { margin-top: 0.75rem; }
+  .angosta { max-width: 44rem; }
+
+  /* Títulos y finales de un equipo */
+  /* Foto del plantel actual: a todo el ancho, antes de los títulos */
+  .plantel-foto { margin-bottom: 2rem; }
+  .plantel-foto figure { margin: 0; overflow: hidden; }
+  .plantel-foto img { display: block; width: 100%; height: auto; background: var(--line); }
+  .plantel-foto .nota { margin: 0; }
+  .plantel-foto figcaption.nota { padding: 0.5rem 0.75rem 0.55rem; }
+  .historia { margin-bottom: 2rem; }
+  .trio { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .trio > div { padding: 0.9rem 1rem 1rem; border-left: 1px solid var(--line); }
+  .trio > div:first-child { border-left: 0; }
+  .trio .rotulo { display: block; color: var(--muted); font-size: 0.9rem; }
+  .trio .cifra {
+    display: block;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 2.2rem;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .trio .cifra.cero { color: var(--muted); font-weight: 500; }
+  .trio .cuales { display: block; margin-top: 0.25rem; font-size: 0.9rem; line-height: 1.4; }
+  .trio .cuales.vacio { color: var(--muted); }
+
+  /* Fotos de campeones: galería del equipo y visor */
+  h3.sub {
+    margin: 1.5rem 0 0.6rem;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.25rem;
+    line-height: 1.1;
+  }
+  .galeria {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .galeria button {
+    display: block;
+    width: 100%;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    text-align: left;
+  }
+  .galeria button:hover { border-color: var(--ink); }
+  .galeria img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    background: var(--line);
+  }
+  .galeria span {
+    display: block;
+    padding: 0.4rem 0.65rem 0.45rem;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.1rem;
+    line-height: 1.15;
+  }
+  /* Estrellas del partido de un equipo: tarjetas cuadradas con jugador, fecha y partido */
+  .estrellas-eq { margin-top: 2rem; }
+  .galeria.cuadrada { grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr)); }
+  .galeria.cuadrada img { aspect-ratio: 1 / 1; }
+  .galeria.cuadrada span.pie { padding: 0.5rem 0.65rem 0.6rem; }
+  .galeria.cuadrada span.pie span { padding: 0; }
+  .galeria.cuadrada span.est-fecha {
+    margin-top: 0.2rem;
+    color: var(--muted);
+    font-family: var(--body, inherit);
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+  .galeria.cuadrada span.est-goles {
+    margin-top: 0.2rem;
+    font-family: var(--body, inherit);
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .galeria.cuadrada span.est-partido {
+    font-family: var(--body, inherit);
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+  /* Historia de la liga: texto en una columna de lectura, con fotos intercaladas */
+  .historia-liga { max-width: 42rem; margin-top: 1.5rem; }
+  .historia-liga p { margin: 0 0 1.1rem; font-size: 1.05rem; line-height: 1.6; }
+  .historia-liga p.entrada { font-size: 1.2rem; line-height: 1.5; }
+  .hist-foto { margin: 1.6rem 0; }
+  .hist-foto button {
+    display: block;
+    width: 100%;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    text-align: left;
+  }
+  .hist-foto button:hover { border-color: var(--ink); }
+  .hist-foto img { display: block; width: 100%; height: auto; background: var(--line); }
+  .hist-foto figcaption {
+    padding: 0.5rem 0.75rem 0.55rem;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.15rem;
+    line-height: 1.15;
+  }
+  /* La copa (vertical) y la placa (horizontal) quedan a la misma altura */
+  .hist-par { display: grid; grid-template-columns: 1fr 2.37fr; gap: 1rem; align-items: start; margin: 1.6rem 0; }
+  .hist-par .hist-foto { margin: 0; }
+  .hist-par .hist-foto[data-foto="copa"] img { aspect-ratio: 3 / 4; object-fit: cover; object-position: 50% 35%; }
+  #foto { width: min(62rem, calc(100vw - 1.5rem)); }
+  .fo-titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+    margin: 0;
+    font-size: 1.5rem;
+  }
+  .fo-titulo .logo { width: 2rem; height: 2rem; }
+  .fo-marco {
+    margin-top: 1rem;
+    background: var(--bg);
+    border-radius: 0.4rem;
+    overflow: hidden;
+  }
+  .fo-marco img {
+    display: block;
+    margin: 0 auto;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: calc(100vh - 13rem);
+  }
+  .fo-marco p { margin: 0; padding: 2rem 1rem; text-align: center; }
+  .fo-nota { margin: 0.5rem 0 0; font-size: 0.85rem; }
+  .sanciones { margin-top: 2rem; max-width: 44rem; }
+  .aviso-oficial {
+    margin: -0.25rem 0 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid var(--pending);
+    border-radius: 0.3rem;
+    background: var(--pending-bg);
+    color: var(--pending);
+    font-size: 0.88rem;
+    line-height: 1.4;
+  }
+  .sanciones td { vertical-align: middle; }
+  .sanciones td.detalle { font-size: 0.95rem; }
+  .sanciones td.sancion { white-space: nowrap; text-align: right; font-weight: 600; }
+  .fo-pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.9rem;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .verfoto {
+    padding: 0;
+    background: none;
+    border: 0;
+    text-align: left;
+    font-weight: inherit;
+  }
+  .verfoto .nombre {
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+  .verfoto .txt, .verfoto .nombre { display: block; }
+  .verfoto .ver {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.2rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  .verfoto svg { width: 0.95rem; height: 0.76rem; flex-shrink: 0; }
+  .verfoto:hover .nombre { text-decoration-color: currentColor; }
+  .verfoto:hover .ver { color: var(--ink); }
+
+  /* Campeones */
+  h2.otra { margin-top: 2rem; }
+  #ca-finalistas-tabla td, #ca-repetidas-tabla td { vertical-align: middle; }
+  #ca-finalistas-tabla td.titulos { font-family: var(--display); font-weight: 700; font-size: 1.35rem; }
+  #ca-repetidas-tabla td.eq { font-weight: 500; }
+  #ca-repetidas-tabla .con-logo + .con-logo { margin-top: 0.3rem; }
+  #ca-repetidas-tabla td.eq small { margin-top: 0.4rem; line-height: 1.35; }
+  #ca-repetidas-tabla td.eq small + small { margin-top: 0.15rem; }
+  #ca-repetidas-tabla td.eq small.aparte { color: var(--ink); }
+  #ca-historial td, #ca-palmares td { vertical-align: middle; }
+  #ca-historial td.eq { min-width: 0; font-weight: 400; }
+  #ca-historial td.ganador { font-weight: 700; font-size: 1.2rem; line-height: 1.15; }
+  #ca-historial td.ganador .logo { width: 2.25rem; height: 2.25rem; border-radius: 0.3rem; }
+  #ca-historial td.ganador .con-logo { gap: 0.6rem; }
+  #ca-historial td.torneo { white-space: normal; text-align: left; font-weight: 500; }
+  #ca-historial td.torneo small { display: block; color: var(--muted); font-size: 0.82rem; font-weight: 400; }
+  #ca-historial td.aparte { color: var(--muted); font-weight: 400; }
+  #ca-historial tr.con-nota td { padding-bottom: 0.25rem; }
+  #ca-historial tr.detalle td {
+    border-top: 0;
+    padding-top: 0;
+    padding-bottom: 0.7rem;
+    white-space: normal;
+    text-align: left;
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.35;
+  }
+  #ca-palmares td.eq small.disuelto { color: var(--pending); }
+  #ca-palmares td.titulos { font-family: var(--display); font-weight: 700; font-size: 1.35rem; }
+
+  /* Simulador */
+  @media (min-width: 861px) {
+    .fija { position: sticky; top: 1rem; }
+  }
+  .sim-fecha { margin: 0 0 1.25rem; }
+  .sim-fecha h3 {
+    margin: 0 0 0.5rem;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.25rem;
+    line-height: 1.1;
+  }
+  .sim-fecha h3 small {
+    margin-left: 0.5rem;
+    color: var(--muted);
+    font-family: var(--body);
+    font-weight: 400;
+    font-size: 0.88rem;
+  }
+  .sim {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1rem;
+  }
+  .sim .equipo { color: var(--ink); }
+  .sim .cajas { display: inline-flex; align-items: center; gap: 0.35rem; font-family: var(--display); font-weight: 700; font-size: 1.3rem; }
+  .sim input {
+    width: 2.7rem;
+    height: 2.5rem;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 0.35rem;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.4rem;
+    text-align: center;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  .sim input::-webkit-outer-spin-button, .sim input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .sim input:hover { border-color: var(--ink); }
+  .sim.listo input { background: var(--surface); border-color: var(--ink); }
+  .sim input:disabled { opacity: 0.45; }
+  .sim input:disabled:hover { border-color: var(--line); }
+  .sim .equipo.pordefinir { color: var(--muted); }
+  .sim .equipo.avanza { font-weight: 700; }
+  .sim .semilla { color: var(--muted); font-weight: 400; margin-right: 0.3rem; }
+  .titulo-fila {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    flex-wrap: wrap;
+    margin: 0 0 0.75rem;
+  }
+  .titulo-fila h2 { margin: 0; }
+
+  /* Copa de Oro */
+  .copa {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+  }
+  .copa h2 { margin-bottom: 0.25rem; }
+  .copa > .nota { margin-top: 0; }
+  .llaves {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 2rem;
+    align-items: center;
+    margin-top: 1.25rem;
+  }
+  .penales {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem 0.75rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.92rem;
+  }
+  .penales button[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .campeon {
+    padding: 0.9rem 1rem 1rem;
+    border-left: 4px solid var(--line);
+  }
+  .campeon.definido { border-left-color: var(--accent); }
+  .campeon span { display: block; color: var(--muted); font-size: 0.9rem; }
+  .campeon strong {
+    display: block;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 2.2rem;
+    line-height: 1.05;
+  }
+  .campeon:not(.definido) strong { color: var(--muted); font-weight: 500; }
+  .paso.mini { padding: 0.3rem 0.7rem; font-size: 0.9rem; }
+  .ordenar .flecha { font-size: 0.7em; margin-left: 0.15em; }
+  .posiciones td.orden { font-weight: 700; }
+
+  footer {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  footer p { margin: 0 0 0.4rem; max-width: 78ch; }
+
+  @media (max-width: 860px) {
+    .cols, .cols.pares, .cols.inv { grid-template-columns: minmax(0, 1fr); gap: 1.75rem; }
+    .llaves { grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
+    .trio { grid-template-columns: minmax(0, 1fr); }
+    .galeria { display: flex; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 0.3rem; }
+    .galeria li { flex: 0 0 9.5rem; scroll-snap-align: start; }
+    .galeria.cuadrada li { flex-basis: 11.5rem; }
+    .logo-liga { width: 3.6rem; height: 3.6rem; }
+    .marca-nombre { font-size: 2.3rem; }
+    .obra { font-size: 0.8rem; }
+    .hist-par { grid-template-columns: minmax(0, 1fr); }
+    .historia-liga p.entrada { font-size: 1.1rem; }
+    .marcas .estrella .txt { display: none; }
+    .fo-titulo { font-size: 1.2rem; }
+    .fo-titulo .logo { width: 1.6rem; height: 1.6rem; }
+    .verfoto .ver { font-size: 0.76rem; }
+    .trio > div { border-left: 0; border-top: 1px solid var(--line); }
+    .trio > div:first-child { border-top: 0; }
+  }
+  @media (max-width: 620px) {
+    .obra { margin-left: 0; }
+    .vistas { flex-wrap: nowrap; }
+    .wrap { padding: 1.1rem 0.9rem 2.5rem; }
+    .vistas { gap: 1.2rem; margin-bottom: 1.2rem; }
+    .ruedas { grid-template-columns: minmax(0, 1fr); gap: 0.8rem; margin: 1.1rem 0 1.5rem; }
+    .riel { gap: 0.25rem; }
+    .riel button { padding: 0.55rem 0; font-size: 1.25rem; }
+    .partido.sep .rueda-cab { padding: 0.5rem 0.75rem; }
+    .fichas { margin: 1.1rem 0 1.5rem; }
+    .pasos { width: 100%; }
+    .paso { flex: 1; }
+    .goles { font-size: 1.75rem; min-width: 5.2rem; }
+    .marcador { gap: 0.5rem; }
+    .equipo { font-size: 0.95rem; }
+    .fila { grid-template-columns: 4.4rem minmax(0, 1fr) auto 2.3rem; gap: 0.5rem; padding: 0.65rem 0.75rem; }
+    .abrir { padding: 0.8rem 0.75rem 0.85rem; }
+    .sim { gap: 0.5rem; padding: 0.6rem 0.75rem; }
+    .sim input { width: 2.5rem; }
+    .fi-caja { padding: 1rem; }
+    .fi-lados { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+    .fi-marcador { font-size: 1rem; }
+    .fi-marcador .goles { font-size: 2.25rem; min-width: 5.4rem; }
+    .fila .lugar { font-size: 1.25rem; }
+    .fila.cab .lugar { font-size: inherit; }
+    .fila .n { font-size: 1.05rem; }
+
+    .posiciones th, .posiciones td { padding: 0.55rem 0.17rem; font-size: 0.84rem; }
+    .posiciones thead th { font-size: 0.76rem; }
+    .posiciones td.eq { min-width: 4.8rem; font-size: 0.85rem; line-height: 1.2; }
+    .posiciones .con-logo { gap: 0.25rem; }
+    .posiciones .logo { width: 1rem; height: 1rem; }
+    .logo.grande { width: 3.5rem; height: 3.5rem; }
+    .eq-cab { gap: 0.75rem; }
+    .posiciones td.pos, .posiciones th.pos { padding-left: 0.5rem; }
+    .posiciones td.pos { width: auto; font-size: 1.15rem; }
+    .posiciones td.mov { width: auto; font-size: 0.78rem; }
+    .posiciones td.pts, .posiciones th.pts { padding-right: 0.5rem; padding-left: 0.3rem; }
+    .posiciones td.pts { font-size: 1.25rem; }
+
+    .lista th, .lista td { padding: 0.55rem 0.35rem; }
+    .lista th.eq, .lista td.eq { padding-left: 0.75rem; }
+    .lista td.eq { min-width: 7rem; }
+    #v-fair .lista td.eq { min-width: 5rem; }
+    #plantel td.eq { min-width: 5.5rem; }
+    #ca-historial th, #ca-historial td { padding-left: 0.25rem; padding-right: 0.25rem; }
+    #ca-historial thead th { font-size: 0.76rem; }
+    #ca-historial td.pos, #ca-historial th.pos { padding-left: 0.6rem; width: auto; }
+    #ca-historial td.pos { font-size: 1.1rem; }
+    #ca-historial td.fin, #ca-historial th.fin { padding-right: 0.6rem; }
+    #ca-historial td.eq, #ca-historial td.torneo { font-size: 0.86rem; line-height: 1.2; }
+    #ca-historial td.ganador { font-size: 0.98rem; line-height: 1.15; }
+    #ca-historial td.ganador .logo.chico { width: 1.6rem; height: 1.6rem; }
+    #ca-historial td.ganador .con-logo { gap: 0.35rem; }
+    #ca-historial td.torneo small { font-size: 0.74rem; }
+    #ca-historial th, #ca-historial td { padding-left: 0.2rem; padding-right: 0.2rem; }
+    #ca-historial td.pos, #ca-historial th.pos { padding-left: 0.5rem; }
+    #ca-historial td.fin, #ca-historial th.fin { padding-right: 0.5rem; }
+    #ca-historial td.torneo small { font-size: 0.76rem; }
+    #ca-historial .con-logo { gap: 0.3rem; }
+    #ca-historial .logo.chico { width: 1.05rem; height: 1.05rem; }
+    #ca-palmares th, #ca-palmares td { padding-left: 0.3rem; padding-right: 0.3rem; }
+    #ca-palmares td.pos, #ca-palmares th.pos { padding-left: 0.6rem; width: auto; }
+    #ca-palmares td.eq { min-width: 5.5rem; padding-left: 0.3rem; }
+    #ca-finalistas-tabla th, #ca-finalistas-tabla td { padding-left: 0.3rem; padding-right: 0.3rem; }
+    #ca-finalistas-tabla td.pos, #ca-finalistas-tabla th.pos { padding-left: 0.6rem; width: auto; }
+    #ca-finalistas-tabla td.eq { min-width: 5.5rem; padding-left: 0.3rem; }
+    #ca-finalistas-tabla td.fin, #ca-finalistas-tabla th.fin { padding-right: 0.6rem; }
+    #ca-palmares td.fin, #ca-palmares th.fin { padding-right: 0.6rem; white-space: normal; font-size: 0.86rem; line-height: 1.2; }
+    #plantel th, #plantel td { padding-left: 0.25rem; padding-right: 0.25rem; }
+    #plantel th.eq, #plantel td.eq { padding-left: 0.75rem; }
+    #plantel th.fin, #plantel td.fin { padding-right: 0.75rem; }
+    .lista td.pos, .lista th.pos { padding-left: 0.75rem; }
+    .lista td.pts, .lista th.pts, .lista td.fin, .lista th.fin { padding-right: 0.75rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="marca">
+    <img class="logo-liga" width="192" height="192" alt="Logo de LIFEXI" src="img/logo-lifexi.webp">
+    <div class="marca-txt">
+      <p class="marca-nombre">LIFEXI</p>
+      <p class="liga">Junior · Torneo Apertura 2026</p>
+    </div>
+    <span class="obra">Sitio en construcción</span>
+  </div>
+
+  <div class="vistas" role="tablist" aria-label="Qué quieres ver">
+    <button type="button" role="tab" id="t-fecha" aria-controls="v-fecha" aria-selected="true">Fechas</button>
+    <button type="button" role="tab" id="t-equipo" aria-controls="v-equipo" aria-selected="false">Equipos</button>
+    <button type="button" role="tab" id="t-lideres" aria-controls="v-lideres" aria-selected="false">Goleadores y Tarjetas</button>
+    <button type="button" role="tab" id="t-fair" aria-controls="v-fair" aria-selected="false">Fair Play</button>
+    <button type="button" role="tab" id="t-sim" aria-controls="v-sim" aria-selected="false">Simulador</button>
+    <button type="button" role="tab" id="t-camp" aria-controls="v-camp" aria-selected="false">Campeones</button>
+    <button type="button" role="tab" id="t-hist" aria-controls="v-hist" aria-selected="false">Historia</button>
+  </div>
+
+  <!-- Vista por fecha -->
+  <div id="v-fecha" role="tabpanel" aria-labelledby="t-fecha">
+    <div class="cabecera">
+      <div>
+        <h1 id="titulo">Fecha</h1>
+        <p class="dia" id="dia"></p>
+      </div>
+      <div class="pasos">
+        <button class="paso" id="antes" type="button">Fecha anterior</button>
+        <button class="paso" id="despues" type="button">Fecha siguiente</button>
+      </div>
+    </div>
+
+    <div class="ruedas" id="riel"></div>
+
+    <div class="cols">
+      <section aria-labelledby="h-res">
+        <h2 id="h-res">Resultados</h2>
+        <div class="panel recorta">
+          <ul class="partidos" id="partidos"></ul>
+        </div>
+        <p class="nota">Toca un partido jugado para ver los jugadores de cada equipo, sus goles y tarjetas.</p>
+        <div id="notas-res"></div>
+      </section>
+
+      <section aria-labelledby="h-tab">
+        <h2 id="h-tab">Tabla</h2>
+        <div class="barra" id="tab-barra" hidden>
+          <span id="tab-orden"></span>
+          <button class="paso mini" id="tab-real" type="button">Volver a la tabla real</button>
+        </div>
+        <div class="panel deslizar">
+          <table class="posiciones" id="tabla-pos">
+            <thead>
+              <tr>
+                <th class="pos" scope="col"><button type="button" class="ordenar" data-c="pos" title="Lugar en la tabla. Toca para volver al orden real">#</button></th>
+                <th class="mov" scope="col"><abbr title="Cambio de posición respecto de la fecha anterior">&nbsp;</abbr></th>
+                <th class="eq" scope="col">Equipo</th>
+                <th scope="col"><button type="button" class="ordenar" data-c="pj" title="Partidos jugados">PJ</button></th>
+                <th scope="col"><button type="button" class="ordenar" data-c="pg" title="Partidos ganados">PG</button></th>
+                <th scope="col"><button type="button" class="ordenar" data-c="pe" title="Partidos empatados">PE</button></th>
+                <th scope="col"><button type="button" class="ordenar" data-c="pp" title="Partidos perdidos">PP</button></th>
+                <th scope="col"><button type="button" class="ordenar" data-c="gf" title="Goles a favor">GF</button></th>
+                <th scope="col"><button type="button" class="ordenar" data-c="gc" title="Goles en contra">GC</button></th>
+                <th scope="col"><button type="button" class="ordenar" data-c="dg" title="Diferencia de gol">DG</button></th>
+                <th scope="col"><button type="button" class="ordenar" data-c="fp" title="Puntaje Fair Play: menos 1 por amarilla y menos 4 por roja">FP</button></th>
+                <th class="pts" scope="col"><button type="button" class="ordenar" data-c="pts" title="Puntos">Pts</button></th>
+              </tr>
+            </thead>
+            <tbody id="cuerpo"></tbody>
+          </table>
+        </div>
+        <div id="notas-tab"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Vista por equipo -->
+  <div id="v-equipo" role="tabpanel" aria-labelledby="t-equipo" hidden>
+    <div class="eq-cab">
+      <img class="logo grande" id="eq-logo" alt="">
+      <h1 class="largo" id="eq-titulo"></h1>
+    </div>
+    <p class="dia" id="eq-resumen"></p>
+
+    <ul class="fichas" id="fichas" aria-label="Elegir equipo"></ul>
+
+    <section class="plantel-foto" aria-labelledby="h-eqplantel">
+      <h2 id="h-eqplantel">Plantel actual</h2>
+      <figure class="panel" id="eq-plantel-marco" hidden><img id="eq-plantel-img" alt=""><figcaption class="nota" id="eq-plantel-pie" hidden></figcaption></figure>
+      <p class="nota" id="eq-plantel-nota" hidden>Falta la foto del plantel actual de este equipo.</p>
+    </section>
+
+    <section class="historia" aria-labelledby="h-historia">
+      <h2 id="h-historia">Títulos y subcampeonatos en LIFEXI</h2>
+      <div class="panel trio" id="eq-historia"></div>
+      <div id="eq-fotos-caja" hidden>
+        <h3 class="sub" id="h-eqfotos">Fotos de sus títulos</h3>
+        <ul class="galeria" id="eq-fotos" aria-labelledby="h-eqfotos"></ul>
+        <p class="nota" id="eq-fotos-nota"></p>
+      </div>
+    </section>
+
+    <div class="cols">
+      <section aria-labelledby="h-eqres">
+        <h2 id="h-eqres">Partidos fecha a fecha</h2>
+        <div class="panel recorta">
+          <ol class="partidos" id="eq-partidos"></ol>
+        </div>
+        <p class="nota">Toca un partido jugado para ver los jugadores de cada equipo, sus goles y tarjetas.</p>
+        <p class="nota">Lugar es la posición del equipo en la tabla al terminar cada fecha, haya jugado o no. Las fechas por jugar aún no tienen lugar.</p>
+      </section>
+
+      <section aria-labelledby="h-plantel">
+        <h2 id="h-plantel">Jugadores</h2>
+        <div class="barra">
+          <span id="eq-cuenta"></span>
+          <label><input type="checkbox" id="solo"> Mostrar solo quienes han jugado</label>
+        </div>
+        <div class="panel deslizar">
+          <table class="lista" id="plantel">
+            <thead>
+              <tr>
+                <th class="eq" scope="col"><button type="button" class="ordenar" data-k="1">Jugador</button></th>
+                <th scope="col"><button type="button" class="ordenar" data-k="2" title="Partidos jugados">PJ</button></th>
+                <th scope="col"><button type="button" class="ordenar" data-k="3">Goles</button></th>
+                <th scope="col"><button type="button" class="ordenar" data-k="4">Amarillas</button></th>
+                <th scope="col"><button type="button" class="ordenar" data-k="5">Rojas</button></th>
+                <th class="fin" scope="col"><button type="button" class="ordenar" data-k="6" title="Veces elegido Jugador del Partido">★</button></th>
+              </tr>
+            </thead>
+            <tbody id="eq-jugadores"></tbody>
+          </table>
+        </div>
+        <p class="nota">★ son las veces que el jugador fue elegido Jugador del Partido. Toca el título de una columna para ordenar la tabla por ese dato.</p>
+      </section>
+    </div>
+
+    <section class="estrellas-eq" id="eq-estrellas-caja" aria-labelledby="h-eqestrellas" hidden>
+      <h2 id="h-eqestrellas">Jugadores del Partido</h2>
+      <ul class="galeria cuadrada" id="eq-estrellas" aria-labelledby="h-eqestrellas"></ul>
+      <p class="nota" id="eq-estrellas-nota"></p>
+    </section>
+  </div>
+
+  <!-- Goleadores y tarjetas -->
+  <div id="v-lideres" role="tabpanel" aria-labelledby="t-lideres" hidden>
+    <h1 class="largo">Goleadores y tarjetas</h1>
+    <p class="dia" id="li-resumen"></p>
+
+    <div class="cols trios" style="margin-top: 1.75rem">
+      <section aria-labelledby="h-gol">
+        <h2 id="h-gol">Goleadores</h2>
+        <div class="panel deslizar">
+          <table class="lista">
+            <thead>
+              <tr>
+                <th class="pos" scope="col"><abbr title="Posición">#</abbr></th>
+                <th class="eq" scope="col">Jugador</th>
+                <th scope="col"><abbr title="Partidos jugados">PJ</abbr></th>
+                <th class="pts" scope="col">Goles</th>
+              </tr>
+            </thead>
+            <tbody id="li-goles"></tbody>
+          </table>
+        </div>
+        <button class="paso mas" id="mas-goles" type="button"></button>
+        <p class="nota" id="nota-goles"></p>
+      </section>
+
+      <section aria-labelledby="h-ama">
+        <h2 id="h-ama">Tarjetas amarillas</h2>
+        <p class="aviso-oficial" role="note"><strong>Información NO oficial:</strong> puede tener errores. Las sanciones válidas son las que publica la liga.</p>
+        <div class="panel deslizar">
+          <table class="lista">
+            <thead>
+              <tr>
+                <th class="pos" scope="col"><abbr title="Posición">#</abbr></th>
+                <th class="eq" scope="col">Jugador</th>
+                <th scope="col"><abbr title="Partidos jugados">PJ</abbr></th>
+                <th class="pts" scope="col">Amarillas</th>
+              </tr>
+            </thead>
+            <tbody id="li-amarillas"></tbody>
+          </table>
+        </div>
+        <button class="paso mas" id="mas-amarillas" type="button"></button>
+        <p class="nota">* Juntó 4 amarillas y ya cumplió su partido de suspensión.</p>
+        <p class="nota">Suspendido: juntó 4 amarillas y todavía no cumple el partido de castigo.</p>
+        <p class="nota">Una doble amarilla en un partido cuenta solo como roja, así que esas dos amarillas no se suman aquí.</p>
+      </section>
+
+      <section aria-labelledby="h-est">
+        <h2 id="h-est">Jugador del Partido</h2>
+        <div class="panel deslizar">
+          <table class="lista">
+            <thead>
+              <tr>
+                <th class="pos" scope="col"><abbr title="Posición">#</abbr></th>
+                <th class="eq" scope="col">Jugador</th>
+                <th scope="col"><abbr title="Partidos jugados">PJ</abbr></th>
+                <th class="pts" scope="col">Veces</th>
+              </tr>
+            </thead>
+            <tbody id="li-estrellas"></tbody>
+          </table>
+        </div>
+        <button class="paso mas" id="mas-estrellas" type="button"></button>
+        <p class="nota">Veces que el jugador fue elegido Jugador del Partido. El sitio de la liga registra uno en cada partido jugado, como mejor jugador del partido. En Patroncitos-Iñigo de la fecha 1 se usa el que publicó la liga en su tarjeta (Fernando Mondaca); el sitio registra a Jose Musalem.</p>
+      </section>
+    </div>
+
+    <section class="sanciones" aria-labelledby="h-sanc">
+      <h2 id="h-sanc">Suspendidos</h2>
+      <div class="panel deslizar">
+        <table class="lista">
+          <thead>
+            <tr>
+              <th class="eq" scope="col">Jugador</th>
+              <th class="eq" scope="col">Detalle</th>
+              <th class="pts fin" scope="col">Sanción</th>
+            </tr>
+          </thead>
+          <tbody id="li-sanciones"></tbody>
+        </table>
+      </div>
+      <p class="nota">Según la tabla de sanciones 2026 de la categoría Junior publicada por LIFEXI.</p>
+    </section>
+  </div>
+
+  <!-- Fair Play -->
+  <div id="v-fair" role="tabpanel" aria-labelledby="t-fair" hidden>
+    <h1 class="largo">Fair Play</h1>
+    <p class="dia" id="fa-resumen"></p>
+
+    <section class="angosta" aria-label="Tabla Fair Play" style="margin-top: 1.75rem">
+      <div class="panel deslizar">
+        <table class="lista">
+          <thead>
+            <tr>
+              <th class="pos" scope="col"><abbr title="Lugar en la tabla Fair Play">#</abbr></th>
+              <th class="eq" scope="col">Equipo</th>
+              <th scope="col"><abbr title="Partidos jugados">PJ</abbr></th>
+              <th scope="col"><abbr title="Amarillas que descuentan 1 punto cada una">Amarillas</abbr></th>
+              <th scope="col"><abbr title="Rojas, incluidas las dobles amarillas, que descuentan 4 puntos cada una">Rojas</abbr></th>
+              <th class="pts" scope="col">Puntaje</th>
+            </tr>
+          </thead>
+          <tbody id="fa-cuerpo"></tbody>
+        </table>
+      </div>
+      <p class="nota">Las amarillas de una doble amarilla no aparecen en la columna Amarillas, porque esa expulsión cuenta solo como roja.</p>
+      <p class="nota" id="fa-empates"></p>
+    </section>
+  </div>
+
+  <!-- Simulador -->
+  <div id="v-sim" role="tabpanel" aria-labelledby="t-sim" hidden>
+    <h1 class="largo">Simulador</h1>
+    <p class="dia">Escribe un resultado en los partidos que faltan y mira cómo quedaría la tabla. Al anotar los goles de un equipo, el otro parte en 0 y lo puedes cambiar. Es solo un ejercicio: la tabla real de las otras pestañas no cambia.</p>
+
+    <div class="cols" style="margin-top: 1.75rem">
+      <section aria-labelledby="h-simp">
+        <div class="titulo-fila">
+          <h2 id="h-simp">Partidos que faltan</h2>
+          <button class="paso mini" id="sim-borrar" type="button">Borrar todos los resultados</button>
+        </div>
+        <div id="sim-partidos"></div>
+      </section>
+
+      <section class="fija" aria-labelledby="h-simt">
+        <h2 id="h-simt">Tabla simulada</h2>
+        <div class="barra">
+          <span id="sim-cuenta"></span>
+        </div>
+        <div class="panel deslizar">
+          <table class="posiciones">
+            <thead>
+              <tr>
+                <th class="pos" scope="col"><abbr title="Lugar en la tabla simulada">#</abbr></th>
+                <th class="mov" scope="col"><abbr title="Cambio de posición respecto de la tabla real">&nbsp;</abbr></th>
+                <th class="eq" scope="col">Equipo</th>
+                <th scope="col"><abbr title="Partidos jugados">PJ</abbr></th>
+                <th scope="col"><abbr title="Partidos ganados">PG</abbr></th>
+                <th scope="col"><abbr title="Partidos empatados">PE</abbr></th>
+                <th scope="col"><abbr title="Partidos perdidos">PP</abbr></th>
+                <th scope="col"><abbr title="Goles a favor">GF</abbr></th>
+                <th scope="col"><abbr title="Goles en contra">GC</abbr></th>
+                <th scope="col"><abbr title="Diferencia de gol">DG</abbr></th>
+                <th scope="col"><abbr title="Puntaje Fair Play">FP</abbr></th>
+                <th class="pts" scope="col"><abbr title="Puntos">Pts</abbr></th>
+              </tr>
+            </thead>
+            <tbody id="sim-cuerpo"></tbody>
+          </table>
+        </div>
+        <div id="sim-notas"></div>
+      </section>
+    </div>
+
+    <section class="copa" aria-labelledby="h-copa">
+      <h2 id="h-copa">Copa de Oro</h2>
+      <p class="nota">Clasifican los cuatro primeros de la tabla simulada. Las semifinales y la final se juegan a partido único, cada una en su propia fecha. Si un partido termina empatado, elige quién avanza.</p>
+      <div class="llaves">
+        <div id="copa-semis"></div>
+        <div id="copa-final"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Campeones históricos -->
+  <div id="v-camp" role="tabpanel" aria-labelledby="t-camp" hidden>
+    <h1 class="largo">Campeones</h1>
+    <p class="dia" id="ca-resumen"></p>
+
+    <div class="cols inv" style="margin-top: 1.75rem">
+      <section aria-labelledby="h-hist">
+        <div class="titulo-fila">
+          <h2 id="h-hist">Historial</h2>
+          <button class="paso mini" id="ca-orden" type="button"></button>
+        </div>
+        <div class="panel deslizar">
+          <table class="lista" id="ca-historial">
+            <thead>
+              <tr>
+                <th class="pos" scope="col"><abbr title="Número de campeonato oficial">Nº</abbr></th>
+                <th class="eq" scope="col">Torneo</th>
+                <th class="eq" scope="col">Campeón</th>
+                <th class="eq fin" scope="col">Subcampeón</th>
+              </tr>
+            </thead>
+            <tbody id="ca-filas"></tbody>
+          </table>
+        </div>
+        <p class="nota" id="ca-fotos-nota"></p>
+        <p class="nota">Fuente: recopilación de fuentes oficiales de LIFEXI, tales como fotos de la Copa original, correos, Facebook, página web e Instagram.</p>
+      </section>
+
+      <section aria-labelledby="h-palm">
+        <h2 id="h-palm">Títulos por equipo</h2>
+        <div class="panel deslizar">
+          <table class="lista" id="ca-palmares">
+            <thead>
+              <tr>
+                <th class="pos" scope="col"><abbr title="Lugar por títulos">#</abbr></th>
+                <th class="eq" scope="col">Equipo</th>
+                <th scope="col">Títulos</th>
+                <th scope="col"><abbr title="Subcampeonatos">Sub.</abbr></th>
+                <th class="fin" scope="col">Último título</th>
+              </tr>
+            </thead>
+            <tbody id="ca-titulos"></tbody>
+          </table>
+        </div>
+        <p class="nota">Títulos y subcampeonatos contados desde el historial. No incluye la Copa COVID de 2021, que no fue oficial. A los finalistas descalificados de 2001-2002, 2012 y 2014 (con asterisco en el historial) no se les cuenta subcampeonato.</p>
+
+        <h2 id="h-finalistas" class="otra">Más finales jugadas</h2>
+        <div class="panel deslizar">
+          <table class="lista" id="ca-finalistas-tabla" aria-labelledby="h-finalistas">
+            <thead>
+              <tr>
+                <th class="pos" scope="col"><abbr title="Lugar por finales jugadas">#</abbr></th>
+                <th class="eq" scope="col">Equipo</th>
+                <th scope="col">Finales</th>
+                <th scope="col">Ganadas</th>
+                <th class="fin" scope="col">Perdidas</th>
+              </tr>
+            </thead>
+            <tbody id="ca-finalistas"></tbody>
+          </table>
+        </div>
+
+        <h2 id="h-repetidas" class="otra">Finales más repetidas</h2>
+        <div class="panel deslizar">
+          <table class="lista" id="ca-repetidas-tabla" aria-labelledby="h-repetidas">
+            <thead>
+              <tr>
+                <th class="pos" scope="col"><abbr title="Lugar por veces que se repitió la final">#</abbr></th>
+                <th class="eq" scope="col">Final</th>
+                <th class="pts" scope="col">Veces</th>
+              </tr>
+            </thead>
+            <tbody id="ca-repetidas"></tbody>
+          </table>
+        </div>
+        <p class="nota">En estas dos tablas no cuentan los torneos Apertura y Clausura de 2017, que se definieron por puntos y sin final, ni la Copa COVID. Sí cuentan las finales de 2001-2002, 2012 y 2014, en que el ganador en cancha fue descalificado: a ese equipo se le suma como final jugada y perdida, pero no como subcampeonato.</p>
+      </section>
+    </div>
+  </div>
+
+
+  <!-- Historia -->
+  <div id="v-hist" role="tabpanel" aria-labelledby="t-hist" hidden>
+    <h1 class="largo">Historia</h1>
+    <article class="historia-liga">
+      <p class="entrada">LIFEXI, liga de fútbol de ex alumnos ignacianos, fue fundada el año 1992 por Francisco Salazar, en el Colegio San Ignacio El Bosque, siendo autorizada por el Rector del Colegio, P. Juan Díaz S.J. El partido inaugural se realizó el día 11 de octubre de ese año, entre los equipos Manresa y Pamplona, dando el puntapié inicial el señor Alberto Villarreal. En el año 2006 se dividió en 2 categorías, junior y senior.</p>
+      <figure class="hist-foto" data-foto="inaugural"><button type="button" aria-label="Ver la foto: Partido Inaugural: Manresa vs Pamplona"><img alt="" loading="lazy"><figcaption>Partido Inaugural: Manresa vs Pamplona</figcaption></button></figure>
+      <p>Los equipos fundadores son: Diablos Rojos, Iñigo, Loyola, Manresa, Pamplona, Patroncitos, Pocuro y Urrestilla.</p>
+      <p>En sus inicios se entregaba la misma copa cada año, que el campeón debía devolver al año siguiente, pero quedaba una placa con el nombre del campeón, además de los goleadores.</p>
+      <div class="hist-par">
+        <figure class="hist-foto" data-foto="copa"><button type="button" aria-label="Ver la foto: Copa LIFEXI"><img alt="" loading="lazy"><figcaption>Copa LIFEXI</figcaption></button></figure>
+        <figure class="hist-foto" data-foto="tabla"><button type="button" aria-label="Ver la foto: Campeones y Goleadores"><img alt="" loading="lazy"><figcaption>Campeones y Goleadores</figcaption></button></figure>
+      </div>
+      <p>En un principio se jugó en la cancha del “Palacio del Deporte” que era de pasto (7 jugadores por equipo), luego la misma Liga cooperó en el financiamiento para convertirla en pasto sintético. A partir del segundo semestre del año 1996 se comenzó a usar la cancha del estadio, con el actual formato de media cancha con 9 jugadores por equipo. Hasta el año 2006 se jugaron campeonatos anuales, pero en formato primera rueda en un año y segunda en el siguiente. Tradicionalmente eran 12 equipos, de los cuales el primero pasaba directo a la final y los 8 siguientes se eliminaban en play off. Entre 2007 y 2015 se jugó campeonato largo, pero en año calendario, a partir de 2016 se empezó con el sistema de dos campeonatos por años, con play off donde clasifican los 4 primeros a Copa de Oro (o campeón LIFEXI) y los 4 siguientes a Copa de Plata, excepto 2017 que fue por puntos. Hasta el año 2019 se jugó regularmente en el SIEB, aunque cada vez hubo más dificultades con ciertas fechas y se tenía que arrendar alguna cancha en otro lado para poder terminar los campeonatos.</p>
+      <p>El año 2020 se suspendió el campeonato por la pandemia del COVID y ya no se volvió al SIEB. En el segundo semestre de 2021 se jugó una Copa Covid, que no fue obligatoria para los equipos, en canchas sintéticas de San Carlos de Apoquindo. En el año 2022 se toma la decisión de que vuelva la Liga, pero ya en otra sede, que fue la Universidad Los Andes, donde se jugó hasta el año 2023. En 2024 y 2025 se jugó en la COF y en 2026 se traslada a el Club AT Chicureo Norte.</p>
+    </article>
+  </div>
+
+  <dialog id="ficha" aria-labelledby="fi-titulo">
+    <div class="fi-caja">
+    <div class="fi-cab">
+      <p class="fi-cuando" id="fi-cuando"></p>
+      <button class="paso" id="fi-cerrar" type="button">Cerrar</button>
+    </div>
+    <h2 class="marcador fi-marcador" id="fi-titulo"></h2>
+    <div class="fi-lados" id="fi-lados"></div>
+    <p class="nota fi-leyenda">
+      <span class="tarjeta am" aria-hidden="true"></span> amarilla
+      <span class="tarjeta ro" aria-hidden="true"></span> roja,
+      ★ Jugador del Partido. Si tiene foto, toca su nombre para verla.
+      Jugadores según la planilla del partido en el sitio de la liga.
+    </p>
+    </div>
+  </dialog>
+
+  <dialog id="foto" aria-labelledby="fo-titulo">
+    <div class="fi-caja">
+      <div class="fi-cab">
+        <h2 class="fo-titulo" id="fo-titulo"></h2>
+        <button class="paso" id="fo-cerrar" type="button">Cerrar</button>
+      </div>
+      <div class="fo-marco" id="fo-marco"></div>
+      <p class="nota fo-nota" id="fo-nota" hidden></p>
+      <div class="fo-pie" id="fo-pie">
+        <button class="paso" id="fo-antes" type="button">Anterior</button>
+        <span id="fo-cuenta"></span>
+        <button class="paso" id="fo-despues" type="button">Siguiente</button>
+      </div>
+    </div>
+  </dialog>
+
+  <footer id="pie">
+    <p data-vistas="fecha equipo lideres fair sim">Datos tomados de lifexi.refereepro.com, según la actualización del 18 de octubre de 2026 a las 15:43.</p>
+    <p data-vistas="fecha sim">La tabla suma 3 puntos por triunfo, 1 por empate y 0 por derrota. Si hay igualdad de puntos se desempata en este orden: diferencia de gol, puntaje Fair Play, goles a favor, resultado directo entre los equipos igualados y sorteo. La flecha junto a la posición muestra cuántos puestos subió o bajó el equipo respecto de la fecha anterior.</p>
+    <p data-vistas="fair">El puntaje Fair Play descuenta 1 punto por tarjeta amarilla, 4 por tarjeta roja, 6 por medio W.O. y 12 por W.O. completo. Una expulsión por doble amarilla cuenta solo como roja. El sitio de la liga no registra ningún W.O. en este torneo, así que aquí solo descuentan las tarjetas, acumuladas desde la fecha 1.</p>
+    <p data-vistas="equipo lideres">En los jugadores, PJ son las veces que el jugador figura en la planilla de un partido. Una doble amarilla en un partido cuenta solo como roja, así que esas dos amarillas no se suman al jugador; las rojas cuentan toda expulsión, sea por doble amarilla o por roja directa. Al juntar 4 amarillas el jugador queda suspendido un partido, y la suspensión se da por cumplida en el primer partido siguiente de su equipo en que no figura en la planilla.</p>
+  </footer>
+</div>
+
+<script>
+// --- DATOS ---
+var EQUIPOS = [
+  "Loyola",                   // 0
+  "San Francisco Javier",     // 1
+  "Alonso Ovalle 1452",       // 2
+  "Iñigo",                    // 3
+  "Manresa",                  // 4
+  "Patroncitos",              // 5
+  "La Fecha 1521",            // 6
+  "San Luis",                 // 7
+  "Atlético Ignaciano"        // 8
+];
+
+// Logo de cada equipo, en el mismo orden: [ancho, alto, archivo de imagen].
+// Son copias reducidas (64 px) de los logos del sitio de la liga.
+var LOGOS = [
+  [64,64,"img/logos/loyola.webp"],
+  [64,60,"img/logos/san-francisco-javier.webp"],
+  [64,64,"img/logos/alonso-ovalle-1452.webp"],
+  [64,64,"img/logos/inigo.webp"],
+  [62,64,"img/logos/manresa.webp"],
+  [64,64,"img/logos/patroncitos.webp"],
+  [60,64,"img/logos/la-fecha-1521.webp"],
+  [64,64,"img/logos/san-luis.webp"],
+  [43,64,"img/logos/atletico-ignaciano.webp"]
+];
+
+// Historial de campeones, tomado de la planilla "Campeones históricos" de LIFEXI Junior.
+// Cada fila: n (número de campeonato oficial o null), t (año o torneo), lugar, nota,
+// c (campeón), s (subcampeón), ast (el subcampeón lleva asterisco: ver la nota) y
+// tipo: "oficial", "suspendido", "nooficial" o "encurso".
+// dq: finalista que ganó en cancha y fue descalificado (por eso no figura como subcampeón).
+// cancha: "empate" si la final terminó empatada y el título se resolvió fuera de la cancha.
+var CAMPEONES = [
+  {"n":1,"t":"1992","lugar":"Cancha Palacio SIEB Pasto","nota":"Primer Partido Oficial de LIFEXI fue Manresa vs Pamplona. Se jugaba con 7 jugadores por equipo","c":"Iñigo","s":"Pocuro","tipo":"oficial","ast":false},
+  {"n":2,"t":"1993","lugar":"Cancha Palacio SIEB Pasto","nota":"","c":"Manresa","s":"Pamplona","tipo":"oficial","ast":false},
+  {"n":3,"t":"1994","lugar":"Cancha Palacio SIEB Pasto","nota":"","c":"Manresa","s":"Iñigo","tipo":"oficial","ast":false},
+  {"n":4,"t":"1995-1996","lugar":"Cancha Pasto SIEB","nota":"El primer semestre de 1995 hubo un campeonato de baby, que no contó como oficial. A partir de este año se juega con 9 jugadores","c":"Manresa","s":"Iñigo","tipo":"oficial","ast":false},
+  {"n":5,"t":"1996-1997","lugar":"Cancha Pasto SIEB","nota":"","c":"Los Nachos","s":"Manresa","tipo":"oficial","ast":false},
+  {"n":6,"t":"1997-1998","lugar":"Cancha Pasto SIEB","nota":"","c":"Diablos Rojos","s":"Magis","tipo":"oficial","ast":false},
+  {"n":7,"t":"1998-1999","lugar":"Cancha Pasto SIEB","nota":"","c":"Iñigo","s":"Loyola","tipo":"oficial","ast":false},
+  {"n":8,"t":"1999-2000","lugar":"Cancha Pasto SIEB","nota":"","c":"Manresa","s":"Patroncitos","tipo":"oficial","ast":false},
+  {"n":9,"t":"2000-2001","lugar":"Cancha Pasto SIEB","nota":"","c":"Manresa","s":"Iñigo","tipo":"oficial","ast":false},
+  {"n":10,"t":"2001-2002","lugar":"Cancha Pasto SIEB","nota":"* Final ganada por Manresa, pero se le descalificó por presentar 3 menores de 24 años en la final (se podía 2)","c":"Iñigo","s":null,"tipo":"oficial","ast":true,"dq":"Manresa"},
+  {"n":11,"t":"2002-2003","lugar":"Cancha Pasto SIEB","nota":"","c":"Azpeitia","s":"Manresa","tipo":"oficial","ast":false},
+  {"n":12,"t":"2003-2004","lugar":"Cancha Pasto SIEB","nota":"","c":"Manresa","s":"La Compañía","tipo":"oficial","ast":false},
+  {"n":13,"t":"2004-2005","lugar":"Cancha Pasto SIEB","nota":"","c":"Alonso Ovalle 1452","s":"Manresa","tipo":"oficial","ast":false},
+  {"n":14,"t":"2005-2006","lugar":"Cancha Pasto SIEB","nota":"","c":"Alonso Ovalle 1452","s":"DHD","tipo":"oficial","ast":false},
+  {"n":15,"t":"2006 Clausura","lugar":"Cancha Pasto SIEB","nota":"Se jugó un campeonato más corto para que a partir del siguiente año los campeonatos se jugaran en año calendario","c":"Diablos Rojos","s":"Monserrat","tipo":"oficial","ast":false},
+  {"n":16,"t":"2007","lugar":"Cancha Pasto SIEB","nota":"","c":"Manresa","s":"DHD","tipo":"oficial","ast":false},
+  {"n":17,"t":"2008","lugar":"Cancha Pasto SIEB","nota":"","c":"Manresa","s":"Alonso Ovalle 1452","tipo":"oficial","ast":false},
+  {"n":18,"t":"2009","lugar":"Cancha Pasto SIEB","nota":"","c":"Alonso Ovalle 1452","s":"Azpeitia","tipo":"oficial","ast":false},
+  {"n":19,"t":"2010","lugar":"Cancha Pasto SIEB","nota":"","c":"DHD","s":"Alonso Ovalle 1452","tipo":"oficial","ast":false},
+  {"n":20,"t":"2011","lugar":"Cancha Pasto SIEB","nota":"","c":"Azpeitia","s":"Manresa","tipo":"oficial","ast":false},
+  {"n":21,"t":"2012","fotoNota":"Foto del Plantel 2013","lugar":"Cancha Pasto SIEB","nota":"* Final ganada por Diablos Rojos, pero se les descalificó por inscripción fraudulenta de un jugador","c":"Azpeitia","s":null,"tipo":"oficial","ast":true,"dq":"Diablos Rojos"},
+  {"n":22,"t":"2013","lugar":"Cancha Pasto SIEB","nota":"","c":"DHD","s":"Azpeitia","tipo":"oficial","ast":false},
+  {"n":23,"t":"2014","lugar":"Cancha Pasto SIEB","nota":"* Final ganada por Diablos Rojos, pero se les descalificó por inscripción fraudulenta de un jugador","c":"Manresa","s":null,"tipo":"oficial","ast":true,"dq":"Diablos Rojos"},
+  {"n":24,"t":"2015","lugar":"Cancha Pasto Padre Hurtado","nota":"* Final empatada en penales, se decretó ganador a Azpeitia por expulsiones de Alonso Ovalle 1452","c":"Azpeitia","s":"Alonso Ovalle 1452","tipo":"oficial","ast":true,"cancha":"empate"},
+  {"n":25,"t":"2016 Apertura","lugar":"Cancha Sintética El Líbano","nota":"","c":"Urrestilla","s":"Manresa","tipo":"oficial","ast":false},
+  {"n":26,"t":"2016 Clausura","lugar":"Cancha Pasto SIEB","nota":"","c":"Urrestilla","s":"Azpeitia","tipo":"oficial","ast":false},
+  {"n":27,"t":"2017 Apertura","lugar":"Cancha Pasto SIEB","nota":"Campeonato por puntos, sin play off. Los partidos finales (en invierno) se jugaron en las canchas sintéticas del Club Oriente","c":"Urrestilla","s":"Manresa","tipo":"oficial","ast":false},
+  {"n":28,"t":"2017 Clausura","lugar":"Cancha Pasto SIEB","nota":"Campeonato por puntos, sin play off","c":"Diablos Rojos","s":"Urrestilla","tipo":"oficial","ast":false},
+  {"n":29,"t":"2018","lugar":"Cancha Pasto SIEB","nota":"","c":"Urrestilla","s":"San Francisco Javier","tipo":"oficial","ast":false},
+  {"n":30,"t":"2019 Apertura","lugar":"Cancha Sintética Huechuraba","nota":"","c":"San Francisco Javier","s":"Manresa","tipo":"oficial","ast":false},
+  {"n":31,"t":"2019 Clausura","lugar":"Cancha Pasto Padre Hurtado","nota":"","c":"Alonso Ovalle 1452","s":"Diablos Rojos","tipo":"oficial","ast":false},
+  {"n":null,"t":"2020","lugar":"","nota":"","c":null,"s":null,"tipo":"suspendido","ast":false},
+  {"n":null,"t":"2021 Clausura","ganador":"Azpeitia","lugar":"","nota":"* Azpeitia ganó un campeonato con 5 equipos (definido como no oficial) que se jugó en pasto sintético en San Carlos de Apoquindo, de 8 jugadores por lado","c":null,"s":null,"tipo":"nooficial","ast":false},
+  {"n":32,"t":"2022 Apertura","lugar":"Cancha Pasto U. Los Andes","nota":"","c":"San Francisco Javier","s":"Azpeitia","tipo":"oficial","ast":false},
+  {"n":33,"t":"2022 Clausura","lugar":"Cancha Pasto U. Los Andes","nota":"","c":"Loyola","s":"Azpeitia","tipo":"oficial","ast":false},
+  {"n":34,"t":"2023 Apertura","lugar":"Cancha Pasto U. Los Andes","nota":"","c":"Patroncitos","s":"Manresa","tipo":"oficial","ast":false},
+  {"n":35,"t":"2023 Clausura","lugar":"Cancha Pasto U. Los Andes","nota":"","c":"Loyola","s":"Oñacinas","tipo":"oficial","ast":false},
+  {"n":36,"t":"2024 Apertura","lugar":"Cancha de Pasto COF","nota":"","c":"Manresa","s":"Loyola","tipo":"oficial","ast":false},
+  {"n":37,"t":"2024 Clausura","lugar":"Cancha de Pasto COF","nota":"","c":"San Francisco Javier","s":"La Fecha 1521","tipo":"oficial","ast":false},
+  {"n":38,"t":"2025 Apertura","lugar":"Cancha de Pasto COF","nota":"","c":"Loyola","s":"Manresa","tipo":"oficial","ast":false},
+  {"n":39,"t":"2025 Clausura","lugar":"Cancha de Pasto COF","nota":"","c":"Alonso Ovalle 1452","s":"San Francisco Javier","tipo":"oficial","ast":false},
+  {"n":40,"t":"2026","lugar":"Cancha de Pasto Club AT Chicureo N","nota":"","c":null,"s":null,"tipo":"encurso","ast":false}
+];
+// Equipos marcados como disueltos en la planilla.
+var DISUELTOS = ["Azpeitia","Urrestilla","Alonso Ovalle 1452","Diablos Rojos","DHD","Los Nachos"];
+// Logos de equipos que no juegan el torneo actual, recortados de la imagen de campeones: [ancho, alto, archivo de imagen].
+var LOGOS_HIST = {
+  "Los Nachos":[54,64,"img/logos/los-nachos.webp"],
+  "Diablos Rojos":[64,64,"img/logos/diablos-rojos.webp"],
+  "Azpeitia":[52,64,"img/logos/azpeitia.webp"],
+  "DHD":[47,64,"img/logos/dhd.webp"],
+  "Urrestilla":[64,60,"img/logos/urrestilla.webp"]
+};
+
+// Fotos de la pestaña Historia: [ancho, alto, foto].
+var FOTOS_HISTORIA = {
+  "inaugural":[890,578,"img/historia/inaugural.webp"],
+  "copa":[584,1040,"img/historia/copa.webp"],
+  "tabla":[1600,900,"img/historia/tabla.webp"]
+};
+
+// Foto de la estrella de un partido (la tarjeta "Jugador del partido" que publica la liga),
+// con la misma clave que ESTRELLAS: [ancho, alto, foto].
+var FOTOS_ESTRELLA = {
+  "1:0:8":[880,880,"img/jugador-del-partido/fecha-01-loyola-atletico-ignaciano.webp"],
+  "1:6:2":[875,876,"img/jugador-del-partido/fecha-01-la-fecha-1521-alonso-ovalle-1452.webp"],
+  "1:5:3":[880,883,"img/jugador-del-partido/fecha-01-patroncitos-inigo.webp"],
+  "1:7:4":[873,880,"img/jugador-del-partido/fecha-01-san-luis-manresa.webp"],
+  "2:6:3":[875,876,"img/jugador-del-partido/fecha-02-la-fecha-1521-inigo.webp"],
+  "2:0:4":[876,882,"img/jugador-del-partido/fecha-02-loyola-manresa.webp"],
+  "2:7:5":[878,880,"img/jugador-del-partido/fecha-02-san-luis-patroncitos.webp"],
+  "2:1:8":[880,880,"img/jugador-del-partido/fecha-02-san-francisco-javier-atletico-ignaciano.webp"],
+  "3:1:2":[880,878,"img/jugador-del-partido/fecha-03-san-francisco-javier-alonso-ovalle-1452.webp"],
+  "3:6:7":[875,877,"img/jugador-del-partido/fecha-03-la-fecha-1521-san-luis.webp"],
+  "3:0:5":[876,878,"img/jugador-del-partido/fecha-03-loyola-patroncitos.webp"],
+  "3:8:4":[874,879,"img/jugador-del-partido/fecha-03-atletico-ignaciano-manresa.webp"],
+  "4:8:5":[879,880,"img/jugador-del-partido/fecha-04-atletico-ignaciano-patroncitos.webp"],
+  "4:2:3":[880,879,"img/jugador-del-partido/fecha-04-alonso-ovalle-1452-inigo.webp"],
+  "4:0:6":[876,882,"img/jugador-del-partido/fecha-04-loyola-la-fecha-1521.webp"],
+  "4:1:4":[877,880,"img/jugador-del-partido/fecha-04-san-francisco-javier-manresa.webp"],
+  "5:2:7":[874,876,"img/jugador-del-partido/fecha-05-alonso-ovalle-1452-san-luis.webp"],
+  "5:1:3":[880,877,"img/jugador-del-partido/fecha-05-san-francisco-javier-inigo.webp"],
+  "5:8:6":[877,877,"img/jugador-del-partido/fecha-05-atletico-ignaciano-la-fecha-1521.webp"],
+  "5:4:5":[880,881,"img/jugador-del-partido/fecha-05-manresa-patroncitos.webp"],
+  "6:3:7":[878,880,"img/jugador-del-partido/fecha-06-inigo-san-luis.webp"],
+  "6:2:0":[875,880,"img/jugador-del-partido/fecha-06-alonso-ovalle-1452-loyola.webp"],
+  "6:4:6":[877,874,"img/jugador-del-partido/fecha-06-manresa-la-fecha-1521.webp"],
+  "6:1:5":[874,878,"img/jugador-del-partido/fecha-06-san-francisco-javier-patroncitos.webp"],
+  "7:2:8":[880,874,"img/jugador-del-partido/fecha-07-alonso-ovalle-1452-atletico-ignaciano.webp"],
+  "7:3:0":[878,878,"img/jugador-del-partido/fecha-07-inigo-loyola.webp"],
+  "7:5:6":[878,876,"img/jugador-del-partido/fecha-07-patroncitos-la-fecha-1521.webp"],
+  "7:1:7":[880,882,"img/jugador-del-partido/fecha-07-san-francisco-javier-san-luis.webp"],
+  "8:7:8":[878,878,"img/jugador-del-partido/fecha-08-san-luis-atletico-ignaciano.webp"],
+  "8:3:4":[876,875,"img/jugador-del-partido/fecha-08-inigo-manresa.webp"],
+  "8:5:2":[879,878,"img/jugador-del-partido/fecha-08-patroncitos-alonso-ovalle-1452.webp"],
+  "8:1:0":[879,881,"img/jugador-del-partido/fecha-08-san-francisco-javier-loyola.webp"],
+  "9:3:8":[877,880,"img/jugador-del-partido/fecha-09-inigo-atletico-ignaciano.webp"],
+  "9:7:0":[876,878,"img/jugador-del-partido/fecha-09-san-luis-loyola.webp"],
+  "9:4:2":[875,878,"img/jugador-del-partido/fecha-09-manresa-alonso-ovalle-1452.webp"],
+  "9:1:6":[880,877,"img/jugador-del-partido/fecha-09-san-francisco-javier-la-fecha-1521.webp"],
+  "10:8:0":[877,882,"img/jugador-del-partido/fecha-10-atletico-ignaciano-loyola.webp"],
+  "10:3:5":[876,878,"img/jugador-del-partido/fecha-10-inigo-patroncitos.webp"],
+  "10:4:7":[878,877,"img/jugador-del-partido/fecha-10-manresa-san-luis.webp"],
+  "11:8:6":[874,878,"img/jugador-del-partido/fecha-11-atletico-ignaciano-la-fecha-1521.webp"],
+  "11:7:0":[876,880,"img/jugador-del-partido/fecha-11-san-luis-loyola.webp"],
+  "11:4:5":[877,876,"img/jugador-del-partido/fecha-11-manresa-patroncitos.webp"],
+  "11:3:1":[873,876,"img/jugador-del-partido/fecha-11-inigo-san-francisco-javier.webp"],
+  "12:7:6":[875,879,"img/jugador-del-partido/fecha-12-san-luis-la-fecha-1521.webp"],
+  "12:5:1":[879,878,"img/jugador-del-partido/fecha-12-patroncitos-san-francisco-javier.webp"],
+  "12:4:0":[877,882,"img/jugador-del-partido/fecha-12-manresa-loyola.webp"],
+  "12:3:8":[876,879,"img/jugador-del-partido/fecha-12-inigo-atletico-ignaciano.webp"],
+  "13:5:8":[878,877,"img/jugador-del-partido/fecha-13-patroncitos-atletico-ignaciano.webp"],
+  "13:7:3":[878,877,"img/jugador-del-partido/fecha-13-san-luis-inigo.webp"],
+  "13:4:1":[878,877,"img/jugador-del-partido/fecha-13-manresa-san-francisco-javier.webp"],
+  "13:0:6":[878,877,"img/jugador-del-partido/fecha-13-loyola-la-fecha-1521.webp"]
+};
+
+// Foto del plantel actual de cada equipo, por índice de equipo: [ancho, alto, foto].
+// Más grandes y con más calidad que las fotos de los títulos.
+var PLANTELES = {
+  0:[1500,1000,"img/planteles/loyola.webp",""],
+  1:[1500,1000,"img/planteles/san-francisco-javier.webp",""],
+  2:[1500,1000,"img/planteles/alonso-ovalle-1452.webp","Plantel 2025 Clausura"],
+  3:[1493,1009,"img/planteles/inigo.webp",""],
+  4:[1500,1000,"img/planteles/manresa.webp",""],
+  5:[1500,1000,"img/planteles/patroncitos.webp",""],
+  6:[1500,1000,"img/planteles/la-fecha-1521.webp",""],
+  7:[1500,1000,"img/planteles/san-luis.webp",""],
+  8:[1500,1000,"img/planteles/atletico-ignaciano.webp",""]
+};
+
+// Fotos de los planteles campeones, por torneo: [ancho, alto, foto grande, miniatura].
+// Cada foto es un archivo de la carpeta img/campeones.
+var FOTOS = {
+  "1992":[900,606,"img/campeones/1992.webp","img/campeones/mini/1992.webp"],
+  "1993":[1112,796,"img/campeones/1993.webp","img/campeones/mini/1993.webp"],
+  "1994":[900,614,"img/campeones/1994.webp","img/campeones/mini/1994.webp"],
+  "1995-1996":[900,614,"img/campeones/1995-1996.webp","img/campeones/mini/1995-1996.webp"],
+  "1996-1997":[600,478,"img/campeones/1996-1997.webp","img/campeones/mini/1996-1997.webp"],
+  "1997-1998":[600,478,"img/campeones/1997-1998.webp","img/campeones/mini/1997-1998.webp"],
+  "1998-1999":[1400,975,"img/campeones/1998-1999.webp","img/campeones/mini/1998-1999.webp"],
+  "1999-2000":[1280,960,"img/campeones/1999-2000.webp","img/campeones/mini/1999-2000.webp"],
+  "2000-2001":[900,626,"img/campeones/2000-2001.webp","img/campeones/mini/2000-2001.webp"],
+  "2001-2002":[1400,898,"img/campeones/2001-2002.webp","img/campeones/mini/2001-2002.webp"],
+  "2002-2003":[1400,955,"img/campeones/2002-2003.webp","img/campeones/mini/2002-2003.webp"],
+  "2003-2004":[900,428,"img/campeones/2003-2004.webp","img/campeones/mini/2003-2004.webp"],
+  "2004-2005":[1268,879,"img/campeones/2004-2005.webp","img/campeones/mini/2004-2005.webp"],
+  "2005-2006":[1280,720,"img/campeones/2005-2006.webp","img/campeones/mini/2005-2006.webp"],
+  "2006 Clausura":[900,554,"img/campeones/2006-clausura.webp","img/campeones/mini/2006-clausura.webp"],
+  "2007":[1274,603,"img/campeones/2007.webp","img/campeones/mini/2007.webp"],
+  "2008":[1400,818,"img/campeones/2008.webp","img/campeones/mini/2008.webp"],
+  "2009":[1169,776,"img/campeones/2009.webp","img/campeones/mini/2009.webp"],
+  "2010":[1128,767,"img/campeones/2010.webp","img/campeones/mini/2010.webp"],
+  "2011":[900,600,"img/campeones/2011.webp","img/campeones/mini/2011.webp"],
+  "2012":[1400,817,"img/campeones/2012.webp","img/campeones/mini/2012.webp"],
+  "2013":[1400,728,"img/campeones/2013.webp","img/campeones/mini/2013.webp"],
+  "2014":[1400,740,"img/campeones/2014.webp","img/campeones/mini/2014.webp"],
+  "2015":[960,720,"img/campeones/2015.webp","img/campeones/mini/2015.webp"],
+  "2016 Apertura":[1400,933,"img/campeones/2016-apertura.webp","img/campeones/mini/2016-apertura.webp"],
+  "2016 Clausura":[1400,933,"img/campeones/2016-clausura.webp","img/campeones/mini/2016-clausura.webp"],
+  "2017 Apertura":[1024,768,"img/campeones/2017-apertura.webp","img/campeones/mini/2017-apertura.webp"],
+  "2017 Clausura":[1400,914,"img/campeones/2017-clausura.webp","img/campeones/mini/2017-clausura.webp"],
+  "2018":[1400,934,"img/campeones/2018.webp","img/campeones/mini/2018.webp"],
+  "2019 Apertura":[1400,933,"img/campeones/2019-apertura.webp","img/campeones/mini/2019-apertura.webp"],
+  "2019 Clausura":[1400,934,"img/campeones/2019-clausura.webp","img/campeones/mini/2019-clausura.webp"],
+  "2021 Clausura":[1079,927,"img/campeones/2021-clausura.webp","img/campeones/mini/2021-clausura.webp"],
+  "2022 Apertura":[900,601,"img/campeones/2022-apertura.webp","img/campeones/mini/2022-apertura.webp"],
+  "2022 Clausura":[900,601,"img/campeones/2022-clausura.webp","img/campeones/mini/2022-clausura.webp"],
+  "2023 Apertura":[1400,933,"img/campeones/2023-apertura.webp","img/campeones/mini/2023-apertura.webp"],
+  "2023 Clausura":[1400,933,"img/campeones/2023-clausura.webp","img/campeones/mini/2023-clausura.webp"],
+  "2024 Apertura":[1400,933,"img/campeones/2024-apertura.webp","img/campeones/mini/2024-apertura.webp"],
+  "2024 Clausura":[1400,933,"img/campeones/2024-clausura.webp","img/campeones/mini/2024-clausura.webp"],
+  "2025 Apertura":[1400,933,"img/campeones/2025-apertura.webp","img/campeones/mini/2025-apertura.webp"],
+  "2025 Clausura":[1400,933,"img/campeones/2025-clausura.webp","img/campeones/mini/2025-clausura.webp"]
+};
+
+// Cada partido: [hora, cancha, local, visita, goles local, goles visita]
+// Un partido sin jugar lleva null en hora y goles.
+// "sitio" indica el número con que la fecha figura en el sitio de la liga cuando es distinto.
+var FECHAS = [
+  { n: 1,  dia: "2026-04-19", p: [["09:00","1",0,8,3,2], ["09:30","2",6,2,1,2], ["11:00","2",5,3,0,3], ["11:00","1",7,4,1,10]] },
+  { n: 2,  dia: "2026-04-26", p: [["09:30","2",7,5,0,1], ["09:30","1",1,8,4,2], ["11:00","2",0,4,4,2], ["11:00","1",6,3,0,1]] },
+  { n: 3,  dia: "2026-05-31", p: [["09:30","1",6,7,0,0], ["09:30","2",8,4,0,1], ["11:00","2",1,2,0,1], ["11:00","1",0,5,3,0]] },
+  { n: 4,  dia: "2026-06-07", p: [["09:30","2",0,6,2,2], ["09:30","1",2,3,1,2], ["11:00","1",1,4,1,1], ["11:00","2",8,5,0,0]] },
+  { n: 5,  dia: "2026-06-14", p: [["09:30","2",1,3,1,3], ["09:30","1",4,5,1,0], ["11:00","",2,7,3,1],  ["11:00","1",8,6,0,5]] },
+  { n: 6,  dia: "2026-06-21", p: [["09:00","1",3,7,3,0], ["09:30","2",1,5,3,1], ["11:00","2",2,0,1,4], ["11:00","1",4,6,3,2]] },
+  { n: 7,  dia: "2026-07-12", p: [["09:30","2",3,0,0,0], ["09:30","1",5,6,2,2], ["11:00","1",1,7,2,0], ["11:00","2",2,8,0,4]] },
+  { n: 8,  dia: "2026-08-23", sitio: 9, p: [["09:30","2",5,2,2,1], ["09:30","1",1,0,0,0], ["11:00","2",7,8,1,1], ["11:00","1",3,4,2,1]] },
+  { n: 9,  dia: "2026-08-30", sitio: 8, p: [["09:30","2",1,6,1,0], ["09:30","1",4,2,3,0], ["11:00","2",7,0,0,3], ["11:00","1",3,8,1,1]] },
+  { n: 10, dia: "2026-09-06", p: [["09:30","",3,5,2,1],  ["09:30","",4,7,1,1],  ["11:00","",8,0,3,1],  [null,"",6,1,null,null]] },
+  { n: 11, dia: "2026-09-13", p: [["09:30","",8,6,3,1],  ["09:30","",7,0,2,4],  ["11:00","",3,1,1,1],  ["11:00","",4,5,3,1]] },
+  { n: 12, dia: "2026-09-27", p: [["09:30","",5,1,2,0],  ["09:30","",3,8,2,1],  ["11:00","",7,6,0,3],  ["11:00","",4,0,3,0]] },
+  { n: 13, dia: "2026-10-04", p: [["09:30","",0,6,0,2],  ["09:30","",4,1,4,0],  ["11:00","",7,3,2,4],  ["11:00","",5,8,2,0]] },
+  { n: 14, dia: "2026-10-18", p: [["09:30","",0,3,2,1],  ["09:30","",5,7,2,1],  ["11:00","",1,8,1,1],  ["11:00","",4,6,1,1]] }
+];
+var ULTIMA = FECHAS.length;
+
+// Partidos que faltan por jugar, en orden: [hora, local, visita].
+// El de la fecha 10 es el pendiente, que no tiene día asignado.
+var FALTAN = [
+  { n: 10, dia: null,         p: [[null, 6, 1]] },
+  { n: 15, dia: "2026-10-25", p: [["09:30", 1, 7], ["09:30", 4, 8], ["11:00", 6, 3], ["11:00", 0, 5]] },
+  { n: 16, dia: "2026-11-08", p: [["09:30", 1, 0], ["09:30", 6, 5], ["11:00", 4, 3], ["11:00", 8, 7]] }
+];
+
+// Cada jugador: [equipo, nombre, partidos jugados, goles, amarillas, rojas]
+// Al cargar se agrega una séptima posición: veces elegido estrella del partido.
+var JUGADORES = [
+  [0,"Adolfo Lopez",0,0,0,0],
+  [0,"Alfredo Cerri",6,0,0,0],
+  [0,"Cristóbal Muñoz",0,0,0,0],
+  [0,"Cristóbal Prat",5,3,0,0],
+  [0,"Francisco Chahin",6,0,0,0],
+  [0,"Germán Aburto",0,0,0,0],
+  [0,"Gonzalo Falcón",4,0,0,0],
+  [0,"Gonzalo Silva",3,0,0,0],
+  [0,"Gonzalo Silva",6,0,0,0],
+  [0,"Ignacio Correa",10,0,4,0],
+  [0,"Ignacio Guzmán",5,0,0,0],
+  [0,"Ignacio Silva",0,0,0,0],
+  [0,"Jaime Pantoja",7,6,0,1],
+  [0,"Jaime Sanchez",2,0,0,0],
+  [0,"Joaquín Silva",9,0,1,0],
+  [0,"Jose Guerra",5,1,0,0],
+  [0,"José Silva",8,1,3,0],
+  [0,"José Zavala",8,3,3,0],
+  [0,"Julián Lería",0,0,0,0],
+  [0,"Lucas Quiroz",9,1,2,0],
+  [0,"Martin Tupper",6,1,1,0],
+  [0,"Nicolás Ubilla",7,0,3,1],
+  [0,"Pablo Carrasco",8,0,2,0],
+  [0,"Patrick de Baeremaecker",1,0,0,1],
+  [0,"Pedro Vega",0,0,0,0],
+  [0,"Rafael Silva",10,1,4,0],
+  [0,"Ramón Fuenzalida",6,0,2,1],
+  [0,"Ricardo Fadic",11,1,1,0],
+  [0,"Roberto Gálvez",11,0,2,1],
+  [0,"Rodrigo Quiroga",0,0,0,0],
+  [0,"Rodrigo Ruiz",7,0,1,1],
+  [0,"Sebastián Correa",0,0,0,0],
+  [0,"Tomás Lagos",7,7,2,0],
+  [1,"Alejandro Aravena",7,0,0,0],
+  [1,"Alvaro Leiva",0,0,0,0],
+  [1,"Andres Cortes",0,0,0,0],
+  [1,"Anibal Ormeño",0,0,0,0],
+  [1,"Carlos Pinto",8,1,1,0],
+  [1,"Carlos Zúñiga",0,0,0,0],
+  [1,"Christian Argüeso",4,0,0,0],
+  [1,"Cristian Ramirez",0,0,0,0],
+  [1,"Cristian Urquizar",0,0,0,0],
+  [1,"Cristobal Ponce",3,1,0,0],
+  [1,"Daniel Matus",0,0,0,0],
+  [1,"Diego Aravena",0,0,0,0],
+  [1,"Diego Lobos",5,0,0,0],
+  [1,"Diego Zeballos",2,0,0,0],
+  [1,"Enrique Fuenzalida",8,1,2,0],
+  [1,"Felipe Macaya",0,0,0,0],
+  [1,"Felipe Muñoz",3,1,1,0],
+  [1,"Felipe Pino",6,0,1,0],
+  [1,"Felipe Zeballos",3,0,0,0],
+  [1,"Francisco Caceres",0,0,0,0],
+  [1,"Francisco Leon",9,1,1,0],
+  [1,"Francisco Torres",0,0,0,0],
+  [1,"Guille Guzman",8,0,2,0],
+  [1,"Ignacio Sanchez",9,2,1,0],
+  [1,"Ivan Leon",9,0,0,0],
+  [1,"Ivan Muñoz",8,1,0,0],
+  [1,"Jaime Sanchez",0,0,0,0],
+  [1,"Javier Zuñiga",0,0,0,0],
+  [1,"Jorge Valdivieso",1,0,0,0],
+  [1,"Jose Pinto",9,0,1,0],
+  [1,"Jose Rojas",0,0,0,0],
+  [1,"Jose Tapia",1,0,0,0],
+  [1,"Leonardo Zuñiga",0,0,0,0],
+  [1,"Lucas Moreno",0,0,0,0],
+  [1,"Luccas Aravena",0,0,0,0],
+  [1,"Matias Duran",5,0,0,0],
+  [1,"Matias Ebner",1,0,0,0],
+  [1,"Matias Lopez",6,0,1,0],
+  [1,"Nicolas Contreras",10,2,3,0],
+  [1,"Nicolas Parra",6,0,0,0],
+  [1,"Raimundo Ibaceta",0,0,0,0],
+  [1,"Raul Padilla",9,0,0,1],
+  [1,"Rene Tejias",0,0,0,0],
+  [1,"Rodrigo Aguila",5,0,3,1],
+  [1,"Rodrigo Poblete",2,3,1,0],
+  [1,"Rodrigo Quiroga",0,0,0,0],
+  [1,"Santiago Santander",9,0,0,0],
+  [1,"Sebastian Carreño",1,0,1,0],
+  [1,"Sebastian Macaya",7,1,0,0],
+  [1,"Sebastian Salazar",0,0,0,0],
+  [1,"Tomas Gamonal",0,0,0,0],
+  [1,"Vicente Alvarez",6,0,0,0],
+  [1,"Vicente Ossa",0,0,0,0],
+  [2,"Agustín Salinas",4,0,2,0],
+  [2,"Alfonso Navarro",0,0,0,0],
+  [2,"Andrés Bascuñan",0,0,0,0],
+  [2,"Camilo Aros",0,0,0,0],
+  [2,"Carlos Huerta",1,0,0,0],
+  [2,"Carlos Valenzuela",0,0,0,0],
+  [2,"Cristian Aedo",0,0,0,0],
+  [2,"Daniel Carreño",0,0,0,0],
+  [2,"Diego Olea",0,0,0,0],
+  [2,"Elias Hassi",4,1,1,0],
+  [2,"Enrique Alvarez",0,0,0,0],
+  [2,"Felipe Castro",5,1,0,0],
+  [2,"Gabriel Fuenzalida",6,0,1,0],
+  [2,"Gonzalo Melej",0,0,0,0],
+  [2,"Hernan Lopez",0,0,0,0],
+  [2,"Ignacio Mery",0,0,0,0],
+  [2,"Ismael Navarro",0,0,0,0],
+  [2,"Italo Navarro",0,0,0,0],
+  [2,"Javier Jimenez",0,0,0,0],
+  [2,"Joaquin Amigo",6,1,0,0],
+  [2,"Joaquin Morales",0,0,0,0],
+  [2,"Jorge Allendes",0,0,0,0],
+  [2,"Jose Martinez",6,1,0,0],
+  [2,"Jose Maturana",0,0,0,0],
+  [2,"Jose Ramaciotti",0,0,0,0],
+  [2,"Juan Cabezas",0,0,0,0],
+  [2,"Juan Silva",3,0,1,0],
+  [2,"Leandro Cabello",0,0,0,0],
+  [2,"Mario Ahumada",0,0,0,0],
+  [2,"Matias Contreras",7,1,1,0],
+  [2,"Matias Richards",0,0,0,0],
+  [2,"Mauricio Ruz",0,0,0,0],
+  [2,"Mauricio Sepulveda",0,0,0,0],
+  [2,"Nicolas Bravo",0,0,0,0],
+  [2,"Nicolas Orellana",0,0,0,0],
+  [2,"Nicolas Ramirez",1,0,0,0],
+  [2,"Oscar Eissmann",0,0,0,0],
+  [2,"Pablo Cavada",0,0,0,0],
+  [2,"Pablo Cavieres",7,1,2,0],
+  [2,"Patricio Santana",0,0,0,0],
+  [2,"Pedro Ferretti",3,1,0,0],
+  [2,"Pedro Luco",0,0,0,0],
+  [2,"Pedro Pumarino",5,1,0,0],
+  [2,"Raimundo Caballero",1,0,0,0],
+  [2,"Raul de la Cerda",8,0,0,0],
+  [2,"Ricardo Veliz",0,0,0,0],
+  [2,"Rodolfo Mazuela",5,0,2,0],
+  [2,"Rodrigo Santana",2,1,3,1],
+  [2,"Sebastian Inostroza",0,0,0,0],
+  [2,"Sebastian Martinez",7,0,0,0],
+  [2,"Sebastian Rickenberg",6,0,3,0],
+  [2,"Sebastian Saa",1,0,0,0],
+  [2,"Sergio Viveros",0,0,0,0],
+  [2,"Tomas Richards",0,0,0,0],
+  [2,"Tomas Valenzuela",5,0,0,0],
+  [2,"Tomás Sepúlveda",3,0,2,1],
+  [3,"Agustin Silva",8,1,1,0],
+  [3,"Andres Flores",9,0,1,0],
+  [3,"Benjamin Amenabar",11,1,1,0],
+  [3,"Benjamin Sanchez",8,1,1,0],
+  [3,"Claudio Lechuga",8,3,1,0],
+  [3,"Cristian Ruiz",9,2,0,1],
+  [3,"Daniel Fuenzalida",2,0,1,0],
+  [3,"Felipe Bascuñan",0,0,0,0],
+  [3,"Felipe Castro",10,3,3,1],
+  [3,"Felipe Cavallo",10,0,0,0],
+  [3,"Felipe Jasen",0,0,0,0],
+  [3,"Felipe Walls",10,0,2,0],
+  [3,"Fernando Mondaca",6,4,0,0],
+  [3,"Guillermo Zilleruelo",0,0,0,0],
+  [3,"Ignacio Cruz",2,0,0,0],
+  [3,"Javier Jarpa",0,0,0,0],
+  [3,"Joaquin Fuenzalida",12,2,1,0],
+  [3,"Joaquín Cristi",0,0,0,0],
+  [3,"Jose Gillet",8,0,2,0],
+  [3,"Jose Musalem",10,1,3,0],
+  [3,"Jose Puelma",0,0,0,0],
+  [3,"José Castro",10,1,2,0],
+  [3,"Juan Baeza",13,0,0,0],
+  [3,"Juan Latorre",0,0,0,0],
+  [3,"Julio Chau",0,0,0,0],
+  [3,"Lukas Puga",0,0,0,0],
+  [3,"Manuel Navarrete",11,1,2,0],
+  [3,"Nicolas Radic",9,0,4,0],
+  [3,"Pablo Gallardo",9,5,1,0],
+  [3,"Patricio Cavieres",0,0,0,0],
+  [3,"Rodrigo Jarpa",0,0,0,0],
+  [3,"Samuel Madrid",0,0,0,0],
+  [3,"Santiago Bernales",1,0,0,0],
+  [3,"Sebastian Godoy",10,0,4,1],
+  [3,"Sebastian Imperatore",0,0,0,0],
+  [3,"Sebastian Rubio",0,0,0,0],
+  [3,"Tomas Gomez",8,0,0,0],
+  [3,"Vicente Fuenzalida",0,0,0,0],
+  [3,"Vicente Labarca",5,0,0,0],
+  [4,"Alexander Fuentes",0,0,0,0],
+  [4,"Angelo Leonard",10,1,2,0],
+  [4,"Angelo Leonard",10,10,2,0],
+  [4,"Benjamín Coloma",10,3,4,0],
+  [4,"Camilo Vicuña",0,0,0,0],
+  [4,"Cristobal Vico",6,0,1,0],
+  [4,"Daniel Bustos",2,0,0,0],
+  [4,"Daniel Nachar",0,0,0,0],
+  [4,"Daniel Van",0,0,0,0],
+  [4,"Diego Bustos",10,1,0,0],
+  [4,"Felipe Mesa",5,1,0,0],
+  [4,"Felix Alvarado",1,0,0,0],
+  [4,"German Matzner",0,0,0,0],
+  [4,"Gonzalo Araya",8,0,0,0],
+  [4,"Gonzalo Maldonado",13,1,2,0],
+  [4,"Guillermo Navarro",0,0,0,0],
+  [4,"Guillermo Navarro",3,0,1,0],
+  [4,"Ignacio Corcuera",13,2,2,0],
+  [4,"Ignacio Rodriguez",7,5,3,0],
+  [4,"Joaquin Alliende",11,0,0,0],
+  [4,"Joaquin Ramos",0,0,0,0],
+  [4,"Jose Arias",1,0,0,0],
+  [4,"Jose Molina",9,2,2,0],
+  [4,"Jose Vicuña",1,1,0,0],
+  [4,"Juan Allan",0,0,0,0],
+  [4,"Juan Nogueira",0,0,0,0],
+  [4,"Lucas Vergara",7,1,0,0],
+  [4,"Luis Vicuña",9,4,2,0],
+  [4,"Manuel Catepillan",2,0,0,0],
+  [4,"Martin Nogueira",0,0,0,0],
+  [4,"Matias Reyes",0,0,0,0],
+  [4,"Matias Vicuña",0,0,0,0],
+  [4,"Nicolás Gallardo",2,1,0,0],
+  [4,"Patricio Quiroga",0,0,0,0],
+  [4,"Raimundo Neumann",0,0,0,0],
+  [4,"Vicente Fernandez",10,0,2,0],
+  [4,"Vicente Silva",11,0,5,0],
+  [5,"Agustin Rodriguez",7,1,0,0],
+  [5,"Andres Piedrabuena",5,0,1,0],
+  [5,"Antonio Quezada",0,0,0,0],
+  [5,"Benjamin Avillo",1,0,1,0],
+  [5,"Benjamin Cruz",0,0,0,0],
+  [5,"Borja Vergara",10,1,3,0],
+  [5,"Carlos Campos",0,0,0,0],
+  [5,"Clemente Lozano",6,0,1,0],
+  [5,"Cristián Sepúlveda",6,1,1,0],
+  [5,"Cristobal Bruneder",0,0,0,0],
+  [5,"Diego Martorell",0,0,0,0],
+  [5,"Diego Rodriguez",9,0,0,0],
+  [5,"Esteban Espinoza",8,2,0,0],
+  [5,"Felipe Browne",0,0,0,0],
+  [5,"Felipe Castillo",0,0,0,0],
+  [5,"Felipe Cembrano",0,0,0,0],
+  [5,"Felipe Labbe",4,1,0,0],
+  [5,"Felipe Rodriguez",0,0,0,0],
+  [5,"Felipe Rodriguez",10,0,1,0],
+  [5,"Felix Quezada",0,0,0,0],
+  [5,"Francisco de Iruarrizaga",0,0,0,0],
+  [5,"Gabriel Fuentes",7,0,0,0],
+  [5,"Gonzalo Rodriguez",9,0,0,0],
+  [5,"Horacio Rodriguez",0,0,0,0],
+  [5,"Ignacio Jimenez",1,0,1,0],
+  [5,"Ignacio Lamas",0,0,0,0],
+  [5,"Ignacio Ricci",5,0,1,0],
+  [5,"Ignacio Ricke",2,0,0,0],
+  [5,"Ismael Rodriguez",12,0,3,0],
+  [5,"Joaquin Castro",0,0,0,0],
+  [5,"Joaquin Salinas",9,0,5,0],
+  [5,"Jorge Becker",5,0,1,0],
+  [5,"Jorge Berrios",1,1,0,0],
+  [5,"Jorge Cariola",0,0,0,0],
+  [5,"Jose Navarro",0,0,0,0],
+  [5,"Jose Rodriguez",0,0,0,0],
+  [5,"José Caballero",0,0,0,0],
+  [5,"José Lempereur",1,0,0,0],
+  [5,"José Rodriguez",10,0,4,0],
+  [5,"Juan Antunez",0,0,0,0],
+  [5,"Juan Latorre",0,0,0,0],
+  [5,"Juan Leturia",13,2,1,0],
+  [5,"Juan Undurraga",6,0,0,0],
+  [5,"Luis Brown",10,2,2,0],
+  [5,"Mario Ruiz",0,0,0,0],
+  [5,"Martin Arancibia",2,0,0,0],
+  [5,"Maximiliano Herraz",0,0,0,0],
+  [5,"Maximiliano Morales",0,0,0,0],
+  [5,"Nicolas Recabal",6,0,0,0],
+  [5,"Nicolas Stevenson",0,0,0,0],
+  [5,"Nicolas Vizcaya",0,0,0,0],
+  [5,"Nicolás Irarrazabal",1,0,0,0],
+  [5,"Pablo Bustos",8,1,0,0],
+  [5,"Pablo de Iruarrizaga",0,0,0,0],
+  [5,"Pablo Silva",0,0,0,0],
+  [5,"Pedro Canessa",0,0,0,0],
+  [5,"Pedro Dupré",0,0,0,0],
+  [5,"Pedro León",0,0,0,0],
+  [5,"Pedro Viollier",0,0,0,0],
+  [5,"Raimundo Ibaceta",0,0,0,0],
+  [5,"Sebastian Solis",0,0,0,0],
+  [5,"Stefano Cembrano",0,0,0,0],
+  [5,"Tomas Infante",6,2,0,0],
+  [5,"Tomas Vicuña",4,0,0,0],
+  [5,"Vicente Canales",0,0,0,0],
+  [5,"Vicente Moyano",0,0,0,0],
+  [5,"Vicente Vergara",0,0,0,0],
+  [6,"Agustin Jimenez",2,0,0,0],
+  [6,"Agustin Soto",4,0,1,0],
+  [6,"Alfredo Cruz",9,1,1,0],
+  [6,"Andrés Berrios",5,2,0,0],
+  [6,"Andrés Sandoval",12,0,1,1],
+  [6,"Aníbal Matte",8,0,3,1],
+  [6,"Benjamín Maluenda",0,0,0,0],
+  [6,"Christian Amengual",8,0,1,0],
+  [6,"Cristobal Edwards",2,0,0,0],
+  [6,"Cristobal Martorell",0,0,0,0],
+  [6,"Cristóbal del Río",0,0,0,0],
+  [6,"Daniel Soto",5,1,0,0],
+  [6,"Dario Leppes",9,0,3,0],
+  [6,"Diego Chaparro",0,0,0,0],
+  [6,"Diego Gaune",0,0,0,0],
+  [6,"Diego Jimenez",10,0,1,0],
+  [6,"Eduardo Panza",0,0,0,0],
+  [6,"Ernesto Godoy",1,0,1,0],
+  [6,"Francisco de Irarruizaga",5,0,1,0],
+  [6,"Gabriel Avilés",0,0,0,0],
+  [6,"Gino Genova",3,1,0,0],
+  [6,"Ignacio Sanchez",7,3,3,0],
+  [6,"Ismael Diaz",0,0,0,0],
+  [6,"Javier Ríos",0,0,0,0],
+  [6,"Jorge Monsalve",7,0,2,0],
+  [6,"Jose Amengual",0,0,0,0],
+  [6,"Jose Troncoso",7,2,0,0],
+  [6,"José Figueroa",0,0,0,0],
+  [6,"José Pérez",0,0,0,0],
+  [6,"José Torrico",0,0,0,0],
+  [6,"Juan Ramaciotti",0,0,0,0],
+  [6,"Juan Valenzuela",8,5,3,1],
+  [6,"Luis Ramirez",11,0,2,0],
+  [6,"Marcelo Dussert",0,0,0,0],
+  [6,"Marco Solar",0,0,0,0],
+  [6,"Mariano Neira",7,0,0,0],
+  [6,"Martin Baron",0,0,0,0],
+  [6,"Matias Contreras",3,0,0,0],
+  [6,"Matias Martorell",0,0,0,0],
+  [6,"Matías Retamales",0,0,0,0],
+  [6,"Maximiliano Torrico",0,0,0,0],
+  [6,"Nicolás Boetto",0,0,0,0],
+  [6,"Nicolás Marshall",0,0,0,0],
+  [6,"Nicolás Solís",0,0,0,0],
+  [6,"Pablo del Río",9,0,5,1],
+  [6,"Pablo Molina",0,0,0,0],
+  [6,"Pablo Vera",0,0,0,0],
+  [6,"Rafael Uribe",11,3,1,0],
+  [6,"René Martorell",0,0,0,0],
+  [6,"Tomas Latorre",0,0,0,0],
+  [6,"Tomas Molina",0,0,0,0],
+  [6,"Tomas Neira",10,1,1,0],
+  [6,"Tomás Cano",0,0,0,0],
+  [7,"Alejandro Veliz",8,0,0,0],
+  [7,"Alen Kong",0,0,0,0],
+  [7,"Alvaro Muñoz",1,0,0,0],
+  [7,"Andres Toro-Ladner",0,0,0,0],
+  [7,"Antonio Salvo",10,0,1,0],
+  [7,"Bastian Encina",7,0,0,0],
+  [7,"Camilo Correa",9,1,1,0],
+  [7,"Darien Richard",2,0,0,0],
+  [7,"Diego Henriquez",4,0,1,0],
+  [7,"Felipe Bascuñan",1,0,0,0],
+  [7,"Fernando Veliz",11,1,0,0],
+  [7,"Gabriel Tambley",1,1,0,0],
+  [7,"Gonzalo Jimenez",3,0,0,0],
+  [7,"Gonzalo Valencia",9,0,2,0],
+  [7,"Hugo Mendizábal",0,0,0,0],
+  [7,"Ignacio Venegas",0,0,0,0],
+  [7,"Ivo Kuzmanic",0,0,0,0],
+  [7,"Javier Acosta",0,0,0,0],
+  [7,"Javier Correa",11,0,0,0],
+  [7,"Javier Mattatall",0,0,0,0],
+  [7,"Javier Vidal",0,0,0,0],
+  [7,"Joaquin Morales",2,0,0,0],
+  [7,"Joaquín Gomez",2,0,0,0],
+  [7,"Juan Alvarado",3,0,0,0],
+  [7,"Juan Alvarado",4,0,1,0],
+  [7,"Juan Arnes",9,1,3,0],
+  [7,"Juan Calderon",10,0,4,1],
+  [7,"Juan Lucay",5,0,0,0],
+  [7,"Marcelo Morales",0,0,0,0],
+  [7,"Matias Guzman",10,1,5,0],
+  [7,"Mauricio Cortez",2,0,0,0],
+  [7,"Miguel Soza",13,0,2,0],
+  [7,"Nicolas Craig",0,0,0,0],
+  [7,"Nicolas Tellez",3,0,2,0],
+  [7,"Nicolás Guevara",9,0,1,0],
+  [7,"Octavio Castañon",5,0,0,0],
+  [7,"Pablo Cikutovic",10,0,6,0],
+  [7,"Pablo Diaz",0,0,0,0],
+  [7,"Roberto Gonzalez",2,0,0,0],
+  [7,"Rodrigo Payauta",0,0,0,0],
+  [7,"Rodrigo Velez",1,0,0,0],
+  [7,"Rómulo García",0,0,0,0],
+  [7,"Sebastián Mattatall",11,4,1,1],
+  [7,"Tomas Sin",0,0,0,0],
+  [7,"Yerko Baltazar",1,0,0,0],
+  [8,"Alvaro Briones",10,0,0,0],
+  [8,"Alvaro Cisternas",2,0,0,0],
+  [8,"Benjamin Pino",5,0,3,0],
+  [8,"Benjamin Tapia",11,2,0,0],
+  [8,"Camilo Aravena",10,0,0,0],
+  [8,"Daniel Barrera",2,0,0,0],
+  [8,"Edian Arancibia",5,0,0,0],
+  [8,"Felipe Kuthe",12,0,1,0],
+  [8,"Felipe Pino",4,1,0,0],
+  [8,"Felipe Weyler",5,1,0,0],
+  [8,"Francisco Caceres",7,1,0,0],
+  [8,"Gabriel Zuñiga",7,0,0,0],
+  [8,"Ignacio Reyes",3,0,0,0],
+  [8,"Jesus Farias",1,0,0,0],
+  [8,"Jorge Pino",12,0,1,0],
+  [8,"Jose Casal",3,0,2,0],
+  [8,"Jose Marchant",8,0,0,0],
+  [8,"Jose Moreno",7,0,1,0],
+  [8,"Marcelo Weyler",10,1,4,1],
+  [8,"Martin Gonzalez",6,3,0,0],
+  [8,"Matias Ruz",11,1,5,0],
+  [8,"Matias Tapia",4,0,0,0],
+  [8,"Maximiliano Caro",1,0,0,0],
+  [8,"Nicolas Caceres",3,0,0,0],
+  [8,"Nicolas Hidalgo",11,1,6,2],
+  [8,"Nicolas Sandoval",0,0,0,0],
+  [8,"Nicolas Wagner",2,1,0,2],
+  [8,"Sebastian Arcila",4,1,1,0],
+  [8,"Sergio Alarcon",0,0,0,0],
+  [8,"Tomas Gonzalez",9,1,0,0],
+  [8,"Tomas Ramos",12,0,0,0],
+  [8,"Tomas Rojas",1,0,1,0],
+  [8,"Vicente Alvarez",1,0,0,0],
+  [8,"Vicente Ossa",7,2,2,0]
+];
+
+// Planilla de cada partido jugado, con clave "fecha:local:visita".
+// Cada lado es una lista de jugadores: su número en JUGADORES, o
+// [número, goles, amarillas, rojas, autogoles] si tuvo alguno en ese partido.
+var PLANILLAS = {
+  "1:0:8":[[[25,0,1,0,0],17,16,9,[12,0,0,1,0],[30,0,0,1,0],[32,3,1,0,0],22,[26,0,0,1,0],28],[[407,1,1,0,0],394,395,383,390,396,405,[416,0,1,0,0],413,399,388,[409,0,0,1,0],401,397,[403,0,1,0,0],412,[402,1,0,0,0]]],
+  "1:6:2":[[316,320,296,300,[329,0,1,0,0],336,[311,1,0,0,0],332,290,322,297,289,317,[309,0,1,0,0]],[[115,1,1,0,0],[86,0,1,0,0],136,141,[133,0,1,0,0],98,130,135,132,124,[108,1,0,0,0],97]],
+  "1:5:3":[[248,229,240,225,260,249,[256,0,1,0,0],239,219,223,226,255,244,230,261,270,259,218,[246,0,1,0,0]],[153,164,151,178,158,150,144,170,[154,1,0,0,0],169,146,175,143,168,163,[147,1,0,0,0],[161,1,0,0,0]]],
+  "1:7:4":[[361,372,360,[367,0,1,0,0],369,342,380,348,[374,0,1,0,0],351,[349,1,0,0,0],363,344,356,346,364,338,373,368,359],[[213,1,0,0,0],217,[207,1,0,0,0],190,[183,2,0,0,0],200,216,198,195,[199,3,1,0,0],194,[208,2,0,0,0],[184,1,0,0,0],191,203,182]],
+  "2:7:5":[[361,372,360,[367,0,1,0,0],369,[380,0,0,1,0],343,[351,0,1,0,0],344,356,[346,0,1,0,0],364,373,368,347,359],[248,240,225,256,234,[236,0,1,0,0],[261,0,1,0,0],[259,0,1,0,0],[218,1,0,0,0],246,245]],
+  "2:1:8":[[71,46,47,76,55,[56,1,1,0,0],74,57,81,33,[53,0,1,0,0],51,84,50,[77,3,0,0,0]],[[407,0,1,1,0],394,383,[416,1,0,0,0],413,399,393,[401,1,0,0,0],397,403,412]],
+  "2:0:4":[[25,[17,2,1,0,0],9,10,15,27,[21,0,0,1,0],[14,0,1,0,0],[22,0,1,0,0],[19,1,0,0,0],28],[217,207,[190,1,0,0,1],183,200,202,216,[198,1,0,0,0],192,195,[199,0,1,0,0],[208,0,1,0,0],184,203,182,186]],
+  "2:6:3":[[306,296,329,336,311,332,[290,0,2,1,0],322,287,297,[289,0,1,0,0],286,292,317,305],[160,153,164,151,178,[150,1,2,1,0],170,154,180,169,145,175,168,174,147,161]],
+  "3:6:7":[[[316,0,1,0,0],320,296,300,329,336,311,332,287,297,289,303,286,292,317,288,309],[367,369,342,373,348,374,343,[363,0,1,0,0],338,356,[371,0,1,0,0],364]],
+  "3:8:4":[[394,395,383,386,390,413,399,[401,0,1,0,0],397,403,412,402,387],[213,[217,0,1,0,0],207,190,200,216,[198,0,1,0,0],195,[204,1,0,0,0],[184,0,1,0,0]]],
+  "3:1:2":[[50,47,45,81,33,53,62,68,71,79,84,55,56,74,57],[115,136,112,[133,1,2,1,0],98,90,130,[124,0,1,0,0],108,95]],
+  "3:0:5":[[[25,0,1,0,0],[17,1,0,0,0],[9,0,1,0,0],[12,1,0,0,0],30,27,[3,1,0,0,0],1,14,22,28],[229,240,225,260,256,280,226,234,266,236,230,270,259,218,246]],
+  "4:0:6":[[16,9,[12,2,0,0,0],30,27,3,20,21,19,[26,0,1,0,0],8,[28,0,2,1,0]],[316,320,300,336,[311,1,0,0,0],285,322,287,289,286,[317,0,1,0,0],[305,1,0,0,0],309]],
+  "4:2:3":[[115,86,105,136,[141,0,2,1,0],130,135,132,124,128,108,[95,1,0,0,0],97],[160,164,151,178,158,[144,0,1,0,0],[170,0,1,0,0],[154,2,0,0,0],142,180,169,145,[146,0,1,0,0],175,143,[168,0,1,0,0],163,147]],
+  "4:1:4":[[[50,0,1,0,0],72,[47,0,1,0,0],37,58,70,[49,1,0,0,0],33,53,62,68,79,76,84,[55,0,1,0,0],56,74,57],[217,207,190,200,216,198,[195,0,1,0,0],199,194,[184,1,0,0,0],[203,0,1,0,0]]],
+  "4:8:5":[[[407,0,2,1,0],394,395,383,386,390,413,399,388,401,397,[403,0,1,0,0],387],[[248,0,1,0,0],229,240,[225,0,1,0,0],260,[256,0,1,0,0],280,223,266,236,270,259,218,246]],
+  "5:1:3":[[50,47,[37,1,1,0,0],45,58,70,81,33,53,62,79,84,55],[160,153,164,151,178,[158,1,0,0,0],150,144,170,[154,1,0,0,0],180,145,146,[175,0,1,0,0],[168,1,0,0,0],[163,0,1,0,0]]],
+  "5:4:5":[[217,207,200,[216,0,1,0,0],[198,1,0,0,0],195,199,194,208,[184,0,1,0,0],191,203,182],[248,229,225,260,249,280,239,223,226,281,234,244,236,261,259,218,246]],
+  "5:2:7":[[[86,0,1,0,0],[105,1,0,0,0],98,140,130,135,124,128,[126,1,0,0,0],108,[95,0,1,0,0],[97,1,0,0,0]],[372,369,342,350,373,[380,1,1,0,0],382,348,374,351,[363,0,1,0,0],365,356,346,[364,0,2,1,0]]],
+  "5:8:6":[[399,406,390,402,413,387,407,393,401,397,394,383,412,400,386,403],[[316,3,0,0,0],306,300,329,336,311,[332,1,0,0,0],285,290,[297,0,1,0,0],289,[303,0,1,0,0],317,[288,1,0,0,0]]],
+  "6:3:7":[[164,178,158,144,[170,2,0,0,0],154,180,[169,0,1,0,0],145,[146,1,0,0,0],175,143,[168,0,1,0,0],163,147],[367,369,350,373,380,348,[362,0,1,0,0],[374,0,1,0,0],351,[363,0,1,0,0],344,356,[371,0,1,0,0]]],
+  "6:1:5":[[50,72,[77,0,1,0,0],[47,1,0,0,0],37,[81,1,0,0,0],33,[53,1,0,0,0],62,71,79,84,74,57,[80,0,1,0,0]],[[248,0,1,0,0],229,249,256,[280,1,0,0,0],239,219,[223,0,1,0,0],281,266,236,230,270,259,218,246,245]],
+  "6:2:0":[[115,86,105,[136,0,1,0,0],141,[98,0,1,0,0],140,129,130,135,132,[128,1,0,0,0],126,108,97],[[25,1,1,0,0],[16,0,1,0,0],[9,0,1,0,0],[12,2,0,0,0],27,[3,1,0,0,0],20,21,7,1,14,19]],
+  "6:4:6":[[[217,0,1,0,0],207,190,[183,1,1,0,0],200,198,[195,1,0,0,0],[199,1,1,0,0],194,208,184,203,182,186],[306,320,300,[336,1,0,0,0],311,332,[290,0,1,0,0],[287,0,1,0,0],297,289,303,317,[288,1,0,0,0],[309,0,1,0,0]]],
+  "7:3:0":[[[160,0,1,0,0],153,164,178,158,150,144,154,[142,0,1,0,0],169,146,[175,0,1,0,0],143,168,163,147,161],[25,16,[9,0,1,0,0],4,10,20,[21,0,1,0,0],32,14,[22,0,1,0,0],19,8,28]],
+  "7:5:6":[[[248,0,1,0,0],229,240,225,260,[256,0,1,0,0],239,[223,1,1,0,0],226,281,266,[230,1,0,0,0],261,259,218,246],[[316,1,0,0,0],320,296,[300,0,1,0,0],[329,0,1,0,0],336,332,290,[287,1,0,0,0],289,[286,0,1,0,0],292]],
+  "7:1:7":[[72,46,37,[58,1,0,0,0],70,81,33,62,68,[71,0,1,0,0],55,[56,1,0,0,0],74,51],[369,342,380,348,[374,0,1,0,0],[351,0,1,0,0],344,338,346,364]],
+  "7:2:8":[[115,105,[136,0,1,0,0],112,98,140,130,135,[132,0,1,0,0],124,128,126,95,97],[406,390,[402,2,0,0,0],416,413,407,[393,1,0,0,0],401,398,397,394,383,386,[403,1,0,0,0]]],
+  "9:1:6":[[50,72,39,[47,0,1,0,0],[70,0,1,0,0],62,68,[71,1,0,0,0],79,76,84,[55,0,1,0,0],56,[74,0,0,1,0],57],[316,306,329,336,332,287,297,[289,0,0,1,0],292,317,305,309]],
+  "9:4:2":[[[217,0,1,0,0],190,209,183,216,198,195,194,[208,1,0,0,0],[184,0,1,0,0],[191,1,0,0,0],[203,1,0,0,0],182,186],[115,105,[136,0,1,0,0],[112,0,1,0,0],140,130,135,137,[124,0,1,0,0],108]],
+  "9:7:0":[[[367,0,1,0,0],369,342,380,348,362,343,351,363,344,338,356,[364,0,1,0,0]],[25,17,9,[12,1,0,0,0],30,27,20,[21,0,1,0,0],[32,2,0,0,0],1,22,19,8,28]],
+  "9:3:8":[[160,153,164,158,150,[170,1,0,0,0],[169,0,1,0,0],175,143,168,[163,0,1,0,0],[161,0,1,0,0]],[406,390,[416,1,0,0,0],413,387,407,393,[401,0,2,1,0],[398,0,1,0,0],397,412,400,386,[403,0,1,0,0]]],
+  "8:5:2":[[[248,0,1,0,0],240,[249,0,1,0,0],256,280,223,[234,1,0,0,0],266,244,236,[261,1,0,0,0],270,259,246],[115,121,105,98,140,130,135,[132,0,1,0,0],[124,1,0,0,0],128]],
+  "8:1:0":[[39,47,58,49,81,33,69,[62,0,1,0,0],71,79,[76,0,1,0,0],56,74,57,51],[25,[17,0,1,0,0],16,12,30,4,10,27,21,32,14,22,26,8,28]],
+  "8:7:8":[[372,[367,1,1,0,0],[369,0,1,0,0],342,380,[374,0,1,0,0],344,365,338,356,371],[399,390,[416,0,1,0,0],413,387,407,393,397,394,[412,1,0,0,0],[400,0,1,0,0],386,[403,0,1,0,0]]],
+  "8:3:4":[[[160,0,1,0,0],153,164,151,[158,0,1,0,0],150,144,[170,1,0,0,0],142,169,145,[146,1,0,0,0],168,163,147,161],[217,190,183,200,[216,0,1,0,0],198,195,199,208,[184,1,0,0,0],191,[182,0,1,0,0],186]],
+  "10:3:5":[[160,[153,0,1,0,0],164,151,158,[150,1,0,0,0],144,[170,1,0,0,0],142,[169,0,1,0,0],[145,0,1,0,0],175,143,168,163,161],[229,240,256,[280,1,0,0,0],239,223,236,230,261,270,259,[246,0,1,0,0]]],
+  "10:4:7":[[217,183,200,198,[195,0,1,0,0],194,[184,0,1,0,0],191],[[372,0,0,0,1],[369,0,1,0,0],342,380,[348,1,0,0,0],374,343,351,363,344,365,338,356,[364,0,1,0,0]]],
+  "10:8:0":[[399,390,[409,1,0,1,0],402,413,387,407,397,383,412,386,404,389,392,[410,1,0,0,0],[385,0,1,0,0]],[25,[17,0,0,0,1],9,12,4,15,27,[23,0,0,1,0],[21,0,1,0,0],[32,1,1,0,0],7,14,[26,0,1,0,0],28]],
+  "11:8:6":[[390,413,387,407,393,401,[397,0,1,0,0],383,400,[386,1,0,0,0],403,389,[392,1,0,0,0],[410,0,1,0,0],385,391],[[300,0,0,0,1],[329,0,1,0,0],336,[332,1,0,0,0],287,[297,0,1,0,0],289,303,292,317]],
+  "11:7:0":[[[372,0,1,0,0],367,369,342,[380,1,0,0,0],348,362,343,363,[344,1,1,0,0],365,356,364,376,345],[[16,1,1,0,0],[9,0,1,0,0],4,10,[15,1,0,0,0],27,[3,1,0,0,0],[20,1,1,0,0],19,26,8,28,6,13]],
+  "11:3:1":[[153,164,151,178,158,144,[142,1,0,0,0],145,146,[175,0,2,1,0],168,161],[39,37,58,53,62,71,79,56,[42,1,0,0,0]]],
+  "11:4:5":[[190,[183,3,0,0,0],200,216,[198,0,1,0,0],195,194,203,182,186],[[248,0,1,0,0],229,[219,0,1,0,0],223,226,281,266,[244,0,1,0,0],236,261,[270,1,0,0,0],259]],
+  "12:5:1":[[269,240,260,249,256,219,223,236,[230,1,0,0,0],261,259,246,[250,1,0,0,0]],[37,45,58,[49,0,1,0,0],81,53,[71,0,1,0,0],79,55,57,42]],
+  "12:3:8":[[164,151,178,[158,1,0,0,0],[150,0,1,0,0],144,142,180,[169,0,1,0,0],[143,0,1,0,0],168,[163,1,0,0,0],147,[161,0,1,0,0],[148,0,1,0,0],156],[390,402,416,413,387,[407,0,1,0,0],[398,0,1,0,0],383,400,386,403,404,389,392,[385,0,1,0,0],[391,1,0,0,0],[414,0,1,0,0]]],
+  "12:7:6":[[361,372,367,369,348,[374,0,1,0,0],343,351,340,338,364,376],[[316,1,2,1,0],[306,1,1,0,0],[296,1,0,0,0],300,329,332,290,287,289,292,317,288,309,293]],
+  "12:4:0":[[[217,0,1,0,0],190,[183,2,1,0,0],200,198,187,195,[199,1,0,0,0],194,208,203,182,[186,0,1,0,0],197],[25,[17,0,1,0,0],30,4,27,20,32,1,14,22,[19,0,1,0,0],26,8,6]],
+  "13:0:6":[[[25,0,1,0,0],17,[16,0,1,0,0],9,4,15,[27,0,1,0,0],7,1,14,19,28,6,13],[[302,0,1,0,0],[306,1,1,0,0],320,300,[329,0,2,1,0],[332,1,0,0,0],290,287,297,289,[292,0,1,0,0],317]],
+  "13:4:1":[[207,[183,2,0,0,0],200,216,198,195,[208,1,1,0,0],[203,1,1,0,0],182,[197,0,1,0,0]],[72,37,45,58,70,53,61,[71,0,1,0,0],79,[76,0,2,1,0],55,56,74,57]],
+  "13:7:3":[[372,[367,0,1,0,0],369,342,[380,2,0,0,0],348,362,[374,0,1,0,0],351,363,365,338,356,364],[160,[153,0,1,0,0],164,151,158,[150,1,0,0,0],[144,1,0,0,0],142,[145,1,0,0,0],175,143,[147,1,0,0,0],[161,0,1,0,0],156]],
+  "13:5:8":[[229,240,239,[223,0,1,0,0],[226,1,1,0,0],244,[221,0,1,0,0],230,[261,1,1,0,0],259,246,263],[399,[390,0,1,0,0],416,387,[407,0,1,0,0],401,397,412,400,386,[403,0,1,0,0],404,389,392,410,[385,0,1,0,0],391,384]],
+  "14:0:3":[[16,[30,0,1,0,0],10,15,[27,1,0,0,0],3,[32,1,0,0,0],1,14,22,[19,0,1,0,0],28,6],[153,164,151,158,150,144,170,142,[146,1,0,0,0],143,163,[147,0,0,1,0],161,148]],
+  "14:5:7":[[248,[256,0,1,0,0],239,219,236,230,261,270,[259,2,0,0,0],[246,0,1,0,0],[242,0,1,0,0],263],[372,367,369,[342,0,1,0,0],350,380,348,374,343,[363,1,0,0,0],344,356,378,345]],
+  "14:1:8":[[72,39,47,37,45,58,70,53,62,68,[71,1,0,0,0],56,74,64,57,42],[390,413,387,393,[401,0,1,0,0],397,383,412,400,[386,1,0,0,0],404,389,392,410,385,391,415,384]],
+  "14:4:6":[[[217,0,1,0,0],190,209,183,216,198,187,195,208,184,[182,1,1,0,0],197],[316,[306,1,1,0,0],320,300,[336,0,1,0,0],311,[332,0,1,0,0],290,[297,0,1,0,0],289,303,292,[317,0,1,0,0],288,309,293]]
+};
+
+// Sanciones publicadas por la liga: [número del jugador en JUGADORES, detalle, sanción].
+var SANCIONES = [
+  [329, "Doble amarilla + acumulación", "2 fechas"],
+  [25, "Acumulación de amarillas", "1 fecha"],
+  [407, "Acumulación de amarillas", "1 fecha"],
+  [403, "Acumulación de amarillas", "1 fecha"],
+  [76, "Doble amarilla", "1 fecha"]
+];
+
+// Estrella de cada partido jugado: clave "fecha:local:visita" y número del jugador en JUGADORES.
+var ESTRELLAS = {"1:0:8":32,"1:6:2":115,"1:5:3":154,"1:7:4":199,"2:7:5":218,"2:1:8":77,"2:0:4":17,"2:6:3":175,"3:6:7":311,"3:8:4":200,"3:1:2":90,"3:0:5":12,"4:0:6":12,"4:2:3":154,"4:1:4":79,"4:8:5":397,"5:1:3":154,"5:4:5":198,"5:2:7":98,"5:8:6":316,"6:3:7":170,"6:1:5":81,"6:2:0":12,"6:4:6":217,"7:3:0":147,"7:5:6":287,"7:1:7":58,"7:2:8":402,"9:1:6":71,"9:4:2":208,"9:7:0":32,"9:3:8":170,"8:5:2":261,"8:1:0":49,"8:7:8":412,"8:3:4":170,"10:3:5":151,"10:4:7":184,"10:8:0":402,"11:8:6":386,"11:7:0":10,"11:3:1":79,"11:4:5":183,"12:5:1":250,"12:3:8":147,"12:7:6":296,"12:4:0":199,"13:0:6":306,"13:4:1":203,"13:7:3":144,"13:5:8":226,"14:0:3":32,"14:5:7":259,"14:1:8":387,"14:4:6":182};
+
+// --- CALCULO ---
+// Ruedas del torneo: la primera va de la fecha 1 a la 9 y la segunda parte en la fecha 10.
+var RUEDA2_DESDE = 10;
+function ruedaDe(n) { return n < RUEDA2_DESDE ? 1 : 2; }
+function nombreRueda(n) { return ruedaDe(n) === 1 ? "Primera rueda" : "Segunda rueda"; }
+
+// Última fecha del calendario, contando las que aún no se juegan.
+var TOTAL = FALTAN[FALTAN.length - 1].n;
+
+// Datos de una fecha, jugada o por jugar, siempre con partidos en el formato
+// [hora, cancha, local, visita, goles local, goles visita]; las por jugar llevan null en los goles.
+function fechaN(n) {
+  if (n <= ULTIMA) return FECHAS[n - 1];
+  var f = FALTAN.filter(function (x) { return x.n === n; })[0];
+  return {
+    n: n, dia: f.dia, porJugar: true,
+    p: f.p.map(function (g) { return [g[0], "", g[1], g[2], null, null]; })
+  };
+}
+
+// Tarjetas de cada lado en un partido para el Fair Play: [amarillas, rojas].
+// Una expulsión por doble amarilla (2 amarillas y 1 roja del mismo jugador) cuenta solo como roja.
+function tarjetas(n, local, visita, lado) {
+  var p = PLANILLAS[n + ":" + local + ":" + visita], am = 0, ro = 0;
+  if (p) p[lado].forEach(function (x) {
+    if (typeof x === "number") return;
+    var a = x[2], r = x[3];
+    if (r > 0 && a >= 2) a -= 2;
+    am += a; ro += r;
+  });
+  return [am, ro];
+}
+
+// Partidos jugados hasta la fecha n, más los "extra" (resultados simulados) si se entregan.
+// Cada elemento es { n: fecha, g: [hora, cancha, local, visita, goles local, goles visita] }.
+function partidosHasta(n, extra) {
+  var lista = [];
+  FECHAS.forEach(function (f) {
+    if (f.n > n) return;
+    f.p.forEach(function (g) { if (g[4] !== null && g[5] !== null) lista.push({ n: f.n, g: g }); });
+  });
+  return extra ? lista.concat(extra) : lista;
+}
+
+// Resultado directo entre un grupo de equipos igualados, dentro de una lista de partidos.
+function directo(grupo, juegos) {
+  var d = {};
+  grupo.forEach(function (r) { d[r.i] = { pts: 0, dg: 0 }; });
+  juegos.forEach(function (x) {
+    var g = x.g;
+    if (!d[g[2]] || !d[g[3]]) return;
+    d[g[2]].dg += g[4] - g[5];
+    d[g[3]].dg += g[5] - g[4];
+    if (g[4] > g[5]) d[g[2]].pts += 3;
+    else if (g[4] < g[5]) d[g[3]].pts += 3;
+    else { d[g[2]].pts++; d[g[3]].pts++; }
+  });
+  return d;
+}
+
+// Tabla acumulada hasta la fecha n. Con "extra" suma además esos partidos simulados,
+// sin tocar los datos reales.
+// Orden: puntos, diferencia de gol, Fair Play, goles a favor, resultado directo y sorteo.
+// Fair Play: -1 por amarilla y -4 por roja; la doble amarilla cuenta solo como roja
+// (el sitio no registra W.O. en este torneo). Los partidos simulados no tienen tarjetas.
+// Si dos equipos siguen igualados tras el resultado directo, quedan marcados con "sorteo".
+function tablaHasta(n, extra) {
+  var juegos = partidosHasta(n, extra);
+  var t = EQUIPOS.map(function (nombre, i) {
+    return { i: i, nombre: nombre, pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0, ta: 0, tr: 0, fp: 0, pts: 0, sorteo: 0 };
+  });
+  juegos.forEach(function (x) {
+    var g = x.g, gl = g[4], gv = g[5];
+    var L = t[g[2]], V = t[g[3]];
+    L.pj++; V.pj++;
+    L.gf += gl; L.gc += gv;
+    V.gf += gv; V.gc += gl;
+    if (gl > gv) { L.pg++; V.pp++; }
+    else if (gl < gv) { V.pg++; L.pp++; }
+    else { L.pe++; V.pe++; }
+    var tl = tarjetas(x.n, g[2], g[3], 0), tv = tarjetas(x.n, g[2], g[3], 1);
+    L.ta += tl[0]; L.tr += tl[1];
+    V.ta += tv[0]; V.tr += tv[1];
+  });
+  t.forEach(function (r) {
+    r.dg = r.gf - r.gc;
+    r.pts = r.pg * 3 + r.pe;
+    r.fp = 0 - r.ta - 4 * r.tr;
+  });
+  function base(a, b) {
+    return (b.pts - a.pts) || (b.dg - a.dg) || (b.fp - a.fp) || (b.gf - a.gf);
+  }
+  t.sort(function (a, b) { return base(a, b) || a.nombre.localeCompare(b.nombre, "es"); });
+
+  // Grupos que siguen igualados: resultado directo y, si persiste, sorteo.
+  var salida = [], k = 0, marca = 0;
+  while (k < t.length) {
+    var fin = k + 1;
+    while (fin < t.length && base(t[k], t[fin]) === 0) fin++;
+    var grupo = t.slice(k, fin);
+    if (grupo.length > 1) {
+      var d = directo(grupo, juegos);
+      var cmp = function (a, b) { return (d[b.i].pts - d[a.i].pts) || (d[b.i].dg - d[a.i].dg); };
+      grupo.sort(function (a, b) { return cmp(a, b) || a.nombre.localeCompare(b.nombre, "es"); });
+      for (var x = 0; x < grupo.length; x++) {
+        if (x > 0 && cmp(grupo[x - 1], grupo[x]) === 0) {
+          if (!grupo[x - 1].sorteo) grupo[x - 1].sorteo = ++marca;
+          grupo[x].sorteo = grupo[x - 1].sorteo;
+        }
+      }
+    }
+    salida = salida.concat(grupo);
+    k = fin;
+  }
+  return salida;
+}
+
+function posiciones(n) {
+  var pos = {};
+  tablaHasta(n).forEach(function (r, k) { pos[r.i] = k + 1; });
+  return pos;
+}
+
+function libres(f) {
+  var juegan = {};
+  f.p.forEach(function (g) { juegan[g[2]] = true; juegan[g[3]] = true; });
+  return EQUIPOS.map(function (_, i) { return i; }).filter(function (i) { return !juegan[i]; });
+}
+
+function pendientesHasta(n) {
+  var lista = [];
+  FECHAS.forEach(function (f) {
+    if (f.n > n) return;
+    f.p.forEach(function (g) { if (g[4] === null) lista.push({ fecha: f.n, local: g[2], visita: g[3] }); });
+  });
+  return lista;
+}
+
+// Lo que hizo un equipo en cada fecha, en orden.
+// tipo: "jugado", "pendiente", "futuro" (fecha que aún no se juega), "libre" (descansa en la rueda
+// de 9 equipos) o "sin" (sin partido programado).
+// lugar: posición del equipo en la tabla al terminar esa fecha.
+function campana(i) {
+  var jugadas = FECHAS.map(function (f) {
+    var g = null, lugar = posiciones(f.n)[i];
+    f.p.forEach(function (x) { if (x[2] === i || x[3] === i) g = x; });
+    if (!g) return { n: f.n, dia: f.dia, lugar: lugar, tipo: f.n <= 9 ? "libre" : "sin" };
+    if (g[4] === null) return { n: f.n, dia: null, lugar: lugar, tipo: "pendiente", local: g[2], visita: g[3] };
+    var mios = g[2] === i ? g[4] : g[5], suyos = g[2] === i ? g[5] : g[4];
+    return {
+      n: f.n, dia: f.dia, lugar: lugar, tipo: "jugado", local: g[2], visita: g[3], gl: g[4], gv: g[5],
+      res: mios > suyos ? "g" : mios < suyos ? "p" : "e"
+    };
+  });
+  // Fechas que aún no se juegan: tipo "futuro", sin lugar en la tabla.
+  var porJugar = FALTAN.filter(function (f) { return f.n > ULTIMA; }).map(function (f) {
+    var g = null;
+    f.p.forEach(function (x) { if (x[1] === i || x[2] === i) g = x; });
+    if (!g) return { n: f.n, dia: f.dia, lugar: null, tipo: "sin" };
+    return { n: f.n, dia: f.dia, hora: g[0], lugar: null, tipo: "futuro", local: g[1], visita: g[2] };
+  });
+  return jugadas.concat(porJugar);
+}
+
+// Jugadores de un partido, lado 0 local y 1 visita. Primero quienes tuvieron goles o tarjetas.
+function planilla(n, local, visita, lado) {
+  var p = PLANILLAS[n + ":" + local + ":" + visita];
+  if (!p) return null;
+  var estrella = ESTRELLAS[n + ":" + local + ":" + visita];
+  var lista = p[lado].map(function (x) {
+    var a = typeof x === "number" ? [x, 0, 0, 0, 0] : x;
+    return { id: a[0], nombre: JUGADORES[a[0]][1], g: a[1], am: a[2], ro: a[3], ag: a[4], es: a[0] === estrella ? 1 : 0 };
+  });
+  lista.sort(function (a, b) {
+    var ea = a.g + a.am + a.ro + a.ag + a.es > 0 ? 0 : 1, eb = b.g + b.am + b.ro + b.ag + b.es > 0 ? 0 : 1;
+    return (ea - eb) || (b.g - a.g) || a.nombre.localeCompare(b.nombre, "es");
+  });
+  return lista;
+}
+
+// Amarillas que cuentan para cada jugador y suspensiones por acumulación.
+// - Una doble amarilla en un partido cuenta solo como roja: esas dos amarillas no se suman.
+// - Al juntar 4 amarillas el jugador queda suspendido un partido. La suspensión se da por cumplida
+//   en el primer partido posterior de su equipo en que no figura en la planilla.
+// Devuelve, por número de jugador: { am, susp: [{ en: fecha de la 4.ª amarilla, cumplida: fecha o null }] }.
+function disciplina() {
+  var d = JUGADORES.map(function () { return { am: 0, susp: [] }; });
+  var deEquipo = EQUIPOS.map(function () { return []; });   // partidos jugados por equipo, en orden
+  FECHAS.forEach(function (f) {
+    f.p.forEach(function (g) {
+      var p = PLANILLAS[f.n + ":" + g[2] + ":" + g[3]];
+      if (g[4] === null || !p) return;
+      [g[2], g[3]].forEach(function (eq, lado) {
+        var presentes = {};
+        p[lado].forEach(function (x) {
+          var a = typeof x === "number" ? [x, 0, 0, 0, 0] : x, r = d[a[0]];
+          presentes[a[0]] = true;
+          var am = a[2];
+          if (a[3] > 0 && am >= 2) am -= 2;
+          var antes = r.am;
+          r.am += am;
+          if (Math.floor(r.am / 4) > Math.floor(antes / 4)) r.susp.push({ en: f.n, cumplida: null });
+        });
+        deEquipo[eq].push({ n: f.n, presentes: presentes });
+      });
+    });
+  });
+  JUGADORES.forEach(function (j, idx) {
+    d[idx].susp.forEach(function (su) {
+      deEquipo[j[0]].forEach(function (m) {
+        if (su.cumplida === null && m.n > su.en && !m.presentes[idx]) su.cumplida = m.n;
+      });
+    });
+  });
+  return d;
+}
+var DISCIPLINA = disciplina();
+// Desde aquí, las amarillas de cada jugador son las que cuentan (sin las de doble amarilla).
+JUGADORES.forEach(function (j, idx) { j[4] = DISCIPLINA[idx].am; });
+
+// Veces que cada jugador fue elegido estrella del partido (queda en la posición 6 del jugador).
+JUGADORES.forEach(function (j) { j[6] = 0; });
+Object.keys(ESTRELLAS).forEach(function (clave) { JUGADORES[ESTRELLAS[clave]][6]++; });
+
+// Títulos y subcampeonatos por equipo, contados desde el historial.
+// Devuelve los equipos con al menos un título, ordenados por títulos; los empatados comparten lugar.
+function palmares() {
+  var m = {};
+  function de(nombre) { return m[nombre] || (m[nombre] = { nombre: nombre, titulos: 0, subs: 0, ultimo: "" }); }
+  CAMPEONES.forEach(function (f) {
+    if (f.c) { var r = de(f.c); r.titulos++; r.ultimo = f.t; }
+    if (f.s) de(f.s).subs++;
+  });
+  var lista = Object.keys(m).map(function (k) { return m[k]; }).filter(function (r) { return r.titulos > 0; });
+  lista.sort(function (a, b) {
+    return (b.titulos - a.titulos) || (b.subs - a.subs) || a.nombre.localeCompare(b.nombre, "es");
+  });
+  var pos = 0;
+  lista.forEach(function (r, k) {
+    if (k === 0 || r.titulos !== lista[k - 1].titulos) pos = k + 1;
+    r.pos = pos;
+    r.disuelto = DISUELTOS.indexOf(r.nombre) >= 0;
+  });
+  return lista;
+}
+
+// Finales jugadas. No cuentan los torneos de 2017 (Apertura y Clausura), que se definieron
+// por puntos y sin final, ni la Copa COVID (que no es oficial y no tiene campeón en el historial).
+// Las finales en que el ganador en cancha fue descalificado (campo dq) cuentan como jugadas
+// para los dos equipos, pero al descalificado no le suman subcampeonato.
+var SIN_FINAL = ["2017 Apertura", "2017 Clausura"];
+function finales() {
+  return CAMPEONES.filter(function (f) { return f.c && SIN_FINAL.indexOf(f.t) < 0; });
+}
+function conLugar(lista, clave) {
+  var pos = 0;
+  lista.forEach(function (r, k) {
+    if (k === 0 || r[clave] !== lista[k - 1][clave]) pos = k + 1;
+    r.pos = pos;
+  });
+  return lista;
+}
+// Equipos por finales jugadas: { nombre, jugadas, ganadas, perdidas, pos }.
+// Al equipo descalificado tras ganar en cancha (campo dq) la final le cuenta como jugada y perdida,
+// pero no como subcampeonato (eso se cuenta aparte, en palmares).
+function finalistas() {
+  var m = {};
+  function de(nombre) { return m[nombre] || (m[nombre] = { nombre: nombre, jugadas: 0, ganadas: 0, perdidas: 0 }); }
+  finales().forEach(function (f) {
+    var c = de(f.c); c.jugadas++; c.ganadas++;
+    var rival = f.s || f.dq;
+    if (rival) { var s = de(rival); s.jugadas++; s.perdidas++; }
+  });
+  var lista = Object.keys(m).map(function (k) { return m[k]; });
+  lista.sort(function (a, b) {
+    return (b.jugadas - a.jugadas) || (b.ganadas - a.ganadas) || a.nombre.localeCompare(b.nombre, "es");
+  });
+  return conLugar(lista, "jugadas");
+}
+// Finales repetidas entre los mismos dos equipos: { a, b, veces, juegos, pos }.
+// Cada juego: { t, c (campeón oficial), cancha (ganador en cancha o "empate"), rival }.
+function finalesRepetidas() {
+  var m = {};
+  finales().forEach(function (f) {
+    var rival = f.s || f.dq;
+    if (!rival) return;
+    var par = [f.c, rival].sort(function (x, y) { return x.localeCompare(y, "es"); });
+    var r = m[par.join("|")] || (m[par.join("|")] = { a: par[0], b: par[1], veces: 0, juegos: [] });
+    r.veces++;
+    r.juegos.push({ t: f.t, c: f.c, rival: rival, cancha: f.dq ? f.dq : (f.cancha || f.c) });
+  });
+  var lista = Object.keys(m).map(function (k) { return m[k]; });
+  lista.forEach(function (r) {
+    var ga = r.juegos.filter(function (j) { return j.c === r.a; }).length;
+    if (r.veces - ga > ga) { var x = r.a; r.a = r.b; r.b = x; }   // primero el que tiene más títulos en ese cruce
+  });
+  lista.sort(function (x, y) { return (y.veces - x.veces) || x.a.localeCompare(y.a, "es") || x.b.localeCompare(y.b, "es"); });
+  return conLugar(lista, "veces");
+}
+
+// Títulos y subcampeonatos de un equipo, como listas de torneos, según el historial.
+// Imagen de la foto del campeón de un torneo; con "mini", la miniatura.
+function rutaFoto(t, mini) {
+  return FOTOS[t][mini ? 3 : 2];
+}
+// Campeonatos que tienen foto, del más antiguo al más nuevo. Con "nombre", solo los de ese equipo.
+function fotosDe(nombre) {
+  return CAMPEONES.filter(function (f) { return f.c && FOTOS[f.t] && (!nombre || f.c === nombre); });
+}
+
+function historia(nombre) {
+  var h = { titulos: [], subs: [] };
+  CAMPEONES.forEach(function (f) {
+    if (f.c === nombre) h.titulos.push(f.t);
+    if (f.s === nombre) h.subs.push(f.t);
+  });
+  return h;
+}
+
+function plantel(i) {
+  return JUGADORES.filter(function (j) { return j[0] === i; });
+}
+
+// Ranking de jugadores por la columna k (3 goles, 4 amarillas). Los empatados comparten posición.
+function ranking(k) {
+  var lista = JUGADORES.filter(function (j) { return j[k] > 0; }).slice();
+  lista.sort(function (a, b) { return (b[k] - a[k]) || a[1].localeCompare(b[1], "es"); });
+  var pos = 0;
+  return lista.map(function (j, n) {
+    if (n === 0 || j[k] !== lista[n - 1][k]) pos = n + 1;
+    return { pos: pos, j: j };
+  });
+}
+
+// --- INTERFAZ ---
+if (typeof document !== "undefined") (function () {
+  var DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+  var MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  var MESES_C = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic"];
+
+  function fechaLarga(iso) {
+    var a = iso.split("-").map(Number);
+    var d = new Date(Date.UTC(a[0], a[1] - 1, a[2]));
+    var s = DIAS[d.getUTCDay()] + " " + a[2] + " de " + MESES[a[1] - 1] + " de " + a[0];
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+  function fechaCorta(iso) {
+    var a = iso.split("-").map(Number);
+    return a[2] + " de " + MESES[a[1] - 1];
+  }
+  function fechaMini(iso) {
+    var a = iso.split("-").map(Number);
+    return a[2] + " " + MESES_C[a[1] - 1];
+  }
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt !== undefined) e.textContent = txt;
+    return e;
+  }
+  function $(id) { return document.getElementById(id); }
+  function signo(x) { return x > 0 ? "+" + x : String(x); }
+  // Imagen del logo de un equipo. El nombre va siempre al lado, por eso no lleva texto alternativo.
+  function logo(i, cls) {
+    var im = el("img", "logo" + (cls ? " " + cls : ""));
+    im.src = LOGOS[i][2];
+    im.alt = "";
+    im.width = LOGOS[i][0];
+    im.height = LOGOS[i][1];
+    return im;
+  }
+  // Nombre de un equipo con su logo, para los marcadores: en el local el logo va pegado al marcador.
+  function equipoMarcador(i, cls, esLocal) {
+    var s = el("span", cls);
+    if (!esLocal) s.appendChild(logo(i));
+    s.appendChild(el("span", "", EQUIPOS[i]));
+    if (esLocal) s.appendChild(logo(i));
+    return s;
+  }
+  // Logo de un equipo por nombre: los del torneo actual, luego los históricos y, si no hay, su inicial.
+  function logoDeNombre(nombre) {
+    var i = EQUIPOS.indexOf(nombre);
+    if (i >= 0) return logo(i, "chico");
+    var h = LOGOS_HIST[nombre];
+    if (h) {
+      var im = el("img", "logo chico");
+      im.src = h[2];
+      im.alt = ""; im.width = h[0]; im.height = h[1];
+      return im;
+    }
+    var s = el("span", "logo chico sin", nombre.charAt(0));
+    s.setAttribute("aria-hidden", "true");
+    return s;
+  }
+  // "a, b y c"
+  function enumerar(lista) {
+    return lista.length < 2 ? lista.join("") : lista.slice(0, -1).join(", ") + " y " + lista[lista.length - 1];
+  }
+  // Ícono de cámara, para marcar los campeones que tienen foto.
+  function iconoFoto() {
+    var NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 20 16");
+    svg.setAttribute("aria-hidden", "true");
+    [["rect", { x: 1, y: 3.5, width: 18, height: 11.5, rx: 2 }],
+     ["path", { d: "M6.5 3.5 8 1h4l1.5 2.5" }],
+     ["circle", { cx: 10, cy: 9.2, r: 3.1 }]].forEach(function (p) {
+      var n = document.createElementNS(NS, p[0]);
+      Object.keys(p[1]).forEach(function (k) { n.setAttribute(k, p[1][k]); });
+      n.setAttribute("fill", "none");
+      n.setAttribute("stroke", "currentColor");
+      n.setAttribute("stroke-width", "1.6");
+      n.setAttribute("stroke-linejoin", "round");
+      svg.appendChild(n);
+    });
+    return svg;
+  }
+  // Encabezado "Primera rueda" / "Segunda rueda" con su color, para separar grupos de fechas.
+  function cabRueda(n, tag) {
+    var c = el(tag || "div", "rueda-cab r" + ruedaDe(n));
+    c.appendChild(el("span", "punto"));
+    c.appendChild(el("span", "", nombreRueda(n)));
+    return c;
+  }
+  // Etiqueta chica de la rueda, para poner junto al nombre de una fecha.
+  function etiquetaRueda(n) {
+    var e = el("span", "etiqueta-rueda r" + ruedaDe(n));
+    e.appendChild(el("span", "punto"));
+    e.appendChild(el("span", "", nombreRueda(n)));
+    return e;
+  }
+  function enlaceEquipo(i) {
+    var b = el("button", "enlace", EQUIPOS[i]);
+    b.type = "button";
+    b.title = "Ver los resultados y jugadores de " + EQUIPOS[i];
+    b.addEventListener("click", function () { irEquipo(i); verVista("equipo"); window.scrollTo(0, 0); });
+    return b;
+  }
+
+  var quieto = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var FINAL = tablaHasta(ULTIMA);
+
+  // ---------- Vistas ----------
+  var VISTAS = ["fecha", "equipo", "lideres", "fair", "sim", "camp", "hist"];
+  var vista = "fecha";
+  function verVista(v) {
+    vista = v;
+    VISTAS.forEach(function (x) {
+      $("v-" + x).hidden = x !== v;
+      $("t-" + x).setAttribute("aria-selected", x === v ? "true" : "false");
+    });
+    pintarPie();
+  }
+  // Las notas del pie aparecen solo en las pestañas a las que se refieren.
+  function pintarPie() {
+    var hay = false;
+    Array.prototype.forEach.call(document.querySelectorAll("#pie p"), function (p) {
+      var ver = p.getAttribute("data-vistas").split(" ").indexOf(vista) >= 0;
+      p.hidden = !ver;
+      if (ver) hay = true;
+    });
+    $("pie").hidden = !hay;
+  }
+  pintarPie();
+  VISTAS.forEach(function (x) {
+    $("t-" + x).addEventListener("click", function () { verVista(x); });
+  });
+
+  // ---------- Vista por fecha ----------
+  var actual = 1;
+  var botones = [];
+  var filas = {};
+  // Orden de la tabla: "pos" es la tabla real; cualquier otra columna la reordena sin cambiar el lugar real.
+  var ordenTabla = { c: "pos", asc: true };
+  var COLUMNA = { pj: 3, pg: 4, pe: 5, pp: 6, gf: 7, gc: 8, dg: 9, fp: 10, pts: 11 };
+  var NOMBRE = {
+    pj: "partidos jugados", pg: "partidos ganados", pe: "partidos empatados", pp: "partidos perdidos",
+    gf: "goles a favor", gc: "goles en contra", dg: "diferencia de gol", fp: "Fair Play", pts: "puntos"
+  };
+
+  var rieles = {};
+  [1, 2].forEach(function (r) {
+    var desde = r === 1 ? 1 : RUEDA2_DESDE, hasta = r === 1 ? RUEDA2_DESDE - 1 : TOTAL;
+    var grupo = el("div", "rueda-grupo"), ol = el("ol", "riel");
+    grupo.appendChild(cabRueda(desde));
+    ol.style.setProperty("--n", hasta - desde + 1);
+    ol.setAttribute("aria-label", "Elegir fecha de la " + nombreRueda(desde).toLowerCase());
+    grupo.appendChild(ol);
+    $("riel").appendChild(grupo);
+    rieles[r] = ol;
+  });
+  for (var nf = 1; nf <= TOTAL; nf++) (function (n) {
+    var li = el("li");
+    var b = el("button", n > ULTIMA ? "futura" : "", String(n));
+    b.type = "button";
+    b.setAttribute("aria-label", "Fecha " + n + (n > ULTIMA ? ", por jugar" : ""));
+    b.addEventListener("click", function () { ir(n); });
+    li.appendChild(b);
+    rieles[ruedaDe(n)].appendChild(li);
+    botones.push(b);
+  })(nf);
+
+  EQUIPOS.forEach(function (nombre, i) {
+    var tr = el("tr");
+    ["pos", "mov", "eq", "", "", "", "", "", "", "", "", "pts"].forEach(function (c) {
+      tr.appendChild(el("td", c));
+    });
+    var celda = el("div", "con-logo");
+    celda.appendChild(logo(i, "chico"));
+    celda.appendChild(enlaceEquipo(i));
+    tr.children[2].appendChild(celda);
+    filas[i] = tr;
+  });
+
+  function pintarResultados(f) {
+    var partidos = $("partidos"), notasRes = $("notas-res");
+    partidos.textContent = "";
+    f.p.forEach(function (g) {
+      var jugado = g[4] !== null;
+      var li = el("li", "partido");
+      var caja = el(jugado ? "button" : "div", "abrir");
+      if (jugado) {
+        caja.type = "button";
+        caja.title = "Ver jugadores, goles y tarjetas";
+        caja.addEventListener("click", function () { abrirPartido(f, g); });
+      }
+      var programado = !jugado && g[0];      // por jugar, con hora en el calendario
+      var cuando = jugado ? g[0] + " h" + (g[1] ? ", cancha " + g[1] : "")
+        : programado ? g[0] + " h" : "Sin fecha de juego";
+      caja.appendChild(el("span", "cuando", cuando));
+
+      var m = el("span", "marcador");
+      var cl = "equipo local", cv = "equipo visita";
+      if (jugado) {
+        if (g[4] > g[5]) cl += " gana";
+        else if (g[4] < g[5]) cv += " gana";
+        else { cl += " empata"; cv += " empata"; }
+      } else { cl += " empata"; cv += " empata"; }
+      m.appendChild(equipoMarcador(g[2], cl, true));
+      var gol = el("span", "goles");
+      if (jugado) gol.textContent = g[4] + " - " + g[5];
+      else gol.appendChild(programado ? el("span", "porjugar", "Por jugar") : el("span", "pendiente", "Pendiente"));
+      m.appendChild(gol);
+      m.appendChild(equipoMarcador(g[3], cv, false));
+      caja.appendChild(m);
+      li.appendChild(caja);
+      partidos.appendChild(li);
+    });
+
+    notasRes.textContent = "";
+    var sinJugar = libres(f).map(function (i) { return EQUIPOS[i]; });
+    if (sinJugar.length) {
+      var txt = f.n <= 9
+        ? "Libre en esta fecha: " + sinJugar.join(", ") + "."
+        : sinJugar.join(", ") + " no tiene partido programado en esta fecha.";
+      notasRes.appendChild(el("p", "nota", txt));
+    }
+    if (f.sitio) {
+      notasRes.appendChild(el("p", "nota",
+        "En el sitio de la liga estos partidos figuran como fecha " + f.sitio +
+        ". Aquí van como fecha " + f.n + " porque se jugaron el " + fechaCorta(f.dia) + "."));
+    }
+  }
+
+  function pintarTabla(n) {
+    var cuerpo = $("cuerpo"), notasTab = $("notas-tab");
+    var pedida = n;
+    n = Math.min(n, ULTIMA);
+    var t = tablaHasta(n);
+    var previa = n > 1 ? posiciones(n - 1) : null;
+    t.forEach(function (r, k) { r.lugar = k + 1; });
+    var oc = ordenTabla.c;
+    if (oc !== "pos") {
+      var sentido = ordenTabla.asc ? 1 : -1;
+      t = t.slice().sort(function (a, b) { return (a[oc] - b[oc]) * sentido || (a.lugar - b.lugar); });
+    }
+
+    var arriba = {};
+    if (!quieto) t.forEach(function (r) {
+      var tr = filas[r.i];
+      if (tr.parentNode) arriba[r.i] = tr.getBoundingClientRect().top;
+    });
+
+    t.forEach(function (r, k) {
+      var tr = filas[r.i], c = tr.children, p = r.lugar;
+      tr.className = p === 1 ? "lider" : "";
+      for (var q = 3; q < c.length; q++) c[q].classList.toggle("orden", COLUMNA[oc] === q);
+      c[0].textContent = p;
+
+      c[1].textContent = "";
+      c[1].className = "mov";
+      if (previa) {
+        var dif = previa[r.i] - p;
+        if (dif > 0) {
+          c[1].textContent = "▲" + dif; c[1].classList.add("sube");
+          c[1].setAttribute("aria-label", "Sube " + dif);
+        } else if (dif < 0) {
+          c[1].textContent = "▼" + (-dif); c[1].classList.add("baja");
+          c[1].setAttribute("aria-label", "Baja " + (-dif));
+        } else {
+          c[1].textContent = "="; c[1].classList.add("igual");
+          c[1].setAttribute("aria-label", "Se mantiene");
+        }
+      } else {
+        c[1].removeAttribute("aria-label");
+      }
+
+      c[3].textContent = r.pj;
+      c[4].textContent = r.pg;
+      c[5].textContent = r.pe;
+      c[6].textContent = r.pp;
+      c[7].textContent = r.gf;
+      c[8].textContent = r.gc;
+      c[9].textContent = signo(r.dg);
+      c[10].textContent = r.fp;
+      c[10].title = "Descuentan " + r.ta + (r.ta === 1 ? " amarilla y " : " amarillas y ") + r.tr + (r.tr === 1 ? " roja" : " rojas");
+      c[11].textContent = r.pts;
+      cuerpo.appendChild(tr);
+    });
+
+    if (!quieto) t.forEach(function (r) {
+      var tr = filas[r.i];
+      if (arriba[r.i] === undefined || !tr.animate) return;
+      var dy = arriba[r.i] - tr.getBoundingClientRect().top;
+      if (Math.abs(dy) < 1) return;
+      tr.animate(
+        [{ transform: "translateY(" + dy + "px)" }, { transform: "translateY(0)" }],
+        { duration: 380, easing: "cubic-bezier(.2,.7,.2,1)" }
+      );
+    });
+
+    notasTab.textContent = "";
+    if (pedida > ULTIMA) {
+      notasTab.appendChild(el("p", "nota",
+        "La fecha " + pedida + " todavía no se juega, así que la tabla es la de la fecha " + ULTIMA + ", la última jugada."));
+    }
+    pendientesHasta(n).forEach(function (q) {
+      notasTab.appendChild(el("p", "nota",
+        EQUIPOS[q.local] + " y " + EQUIPOS[q.visita] + " tienen pendiente su partido de la fecha " + q.fecha +
+        ", por eso suman un partido menos."));
+    });
+    var sorteos = {};
+    t.forEach(function (r) { if (r.sorteo) (sorteos[r.sorteo] = sorteos[r.sorteo] || []).push(r.nombre); });
+    Object.keys(sorteos).forEach(function (m) {
+      var e = sorteos[m];
+      notasTab.appendChild(el("p", "nota",
+        e.slice(0, -1).join(", ") + " y " + e[e.length - 1] +
+        " están igualados en todos los criterios de desempate. Según el reglamento su orden se define por sorteo; aquí van en orden alfabético."));
+    });
+    notasTab.appendChild(el("p", "nota",
+      "FP es el puntaje Fair Play: resta 1 punto por cada amarilla y 4 por cada roja; una doble amarilla cuenta solo como roja. Desempata después de la diferencia de gol."));
+    notasTab.appendChild(el("p", "nota",
+      "Toca el título de una columna para ordenar los equipos por ese dato. Toca # para volver al orden real de la tabla."));
+
+    $("tab-barra").hidden = oc === "pos";
+    if (oc !== "pos") {
+      $("tab-orden").textContent = "Ordenada por " + NOMBRE[oc] + ", de " +
+        (ordenTabla.asc ? "menor a mayor" : "mayor a menor") + ". El número de la izquierda es el lugar real.";
+    }
+    Array.prototype.forEach.call(document.querySelectorAll("#tabla-pos .ordenar"), function (b) {
+      var th = b.parentNode, cc = b.getAttribute("data-c");
+      var base = b.getAttribute("data-t") || b.textContent;
+      b.setAttribute("data-t", base);
+      b.textContent = base;
+      if (cc === oc && cc !== "pos") {
+        th.setAttribute("aria-sort", ordenTabla.asc ? "ascending" : "descending");
+        b.appendChild(el("span", "flecha", ordenTabla.asc ? "▲" : "▼"));
+      } else {
+        th.removeAttribute("aria-sort");
+      }
+    });
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("#tabla-pos .ordenar"), function (b) {
+    b.addEventListener("click", function () {
+      var cc = b.getAttribute("data-c");
+      if (cc === "pos") ordenTabla = { c: "pos", asc: true };
+      else if (ordenTabla.c === cc) ordenTabla.asc = !ordenTabla.asc;
+      else ordenTabla = { c: cc, asc: false };
+      pintarTabla(actual);
+    });
+  });
+  $("tab-real").addEventListener("click", function () {
+    ordenTabla = { c: "pos", asc: true };
+    pintarTabla(actual);
+  });
+
+  function ir(n) {
+    if (n < 1 || n > TOTAL) return;
+    actual = n;
+    var f = fechaN(n);
+    $("titulo").textContent = "Fecha " + n;
+    $("dia").textContent = "";
+    $("dia").appendChild(etiquetaRueda(n));
+    $("dia").appendChild(document.createTextNode(fechaLarga(f.dia) + (f.porJugar ? ". Por jugar" : "")));
+    $("h-res").textContent = f.porJugar ? "Programación" : "Resultados";
+    $("h-tab").textContent = n === 1 ? "Tabla después de la fecha 1"
+      : "Tabla acumulada a la fecha " + Math.min(n, ULTIMA);
+    botones.forEach(function (b, k) {
+      if (k + 1 === n) b.setAttribute("aria-current", "true");
+      else b.removeAttribute("aria-current");
+    });
+    $("antes").disabled = n === 1;
+    $("despues").disabled = n === TOTAL;
+    pintarResultados(f);
+    pintarTabla(n);
+  }
+
+  $("antes").addEventListener("click", function () { ir(actual - 1); });
+  $("despues").addEventListener("click", function () { ir(actual + 1); });
+
+  // ---------- Detalle de un partido ----------
+  var ficha = $("ficha");
+
+  function cerrarFicha() {
+    if (ficha.close) ficha.close(); else ficha.removeAttribute("open");
+  }
+  function plural(n, uno, varios) { return n === 1 ? uno : n + " " + varios; }
+
+  function abrirPartido(f, g) {
+    if (!g || g[4] === null) return;
+    var larga = fechaLarga(f.dia);
+    $("fi-cuando").textContent = "";
+    $("fi-cuando").appendChild(etiquetaRueda(f.n));
+    $("fi-cuando").appendChild(document.createTextNode("Fecha " + f.n + ", " + larga.charAt(0).toLowerCase() + larga.slice(1) +
+      ", " + g[0] + " h" + (g[1] ? ", cancha " + g[1] : "")));
+
+    var t = $("fi-titulo");
+    t.textContent = "";
+    var cl = "equipo local", cv = "equipo visita";
+    if (g[4] > g[5]) cl += " gana";
+    else if (g[4] < g[5]) cv += " gana";
+    else { cl += " empata"; cv += " empata"; }
+    t.appendChild(equipoMarcador(g[2], cl, true));
+    t.appendChild(el("span", "goles", g[4] + " - " + g[5]));
+    t.appendChild(equipoMarcador(g[3], cv, false));
+
+    var lados = $("fi-lados");
+    lados.textContent = "";
+    [g[2], g[3]].forEach(function (eq, lado) {
+      var sec = el("section");
+      var h = el("h3");
+      var b = el("button", "enlace", EQUIPOS[eq]);
+      b.type = "button";
+      b.title = "Ver los resultados y jugadores de " + EQUIPOS[eq];
+      b.addEventListener("click", function () {
+        cerrarFicha(); irEquipo(eq); verVista("equipo"); window.scrollTo(0, 0);
+      });
+      h.appendChild(logo(eq, "chico"));
+      h.appendChild(b);
+      sec.appendChild(h);
+
+      var lista = planilla(f.n, g[2], g[3], lado) || [];
+      sec.appendChild(el("p", "fi-cuenta", lista.length
+        ? lista.length + " jugadores en la planilla"
+        : "El sitio de la liga no tiene la planilla de este equipo."));
+
+      var ul = el("ul", "fi-lista");
+      lista.forEach(function (j) {
+        var con = j.g + j.am + j.ro + j.ag + j.es > 0;
+        var li = el("li", con ? "con" : "");
+        var fe = j.es ? FOTOS_ESTRELLA[f.n + ":" + g[2] + ":" + g[3]] : null;
+        if (fe) {
+          var bf = el("button", "verfoto"), ver = el("span", "ver");
+          bf.type = "button";
+          bf.appendChild(el("span", "nombre", j.nombre));
+          ver.appendChild(iconoFoto());
+          ver.appendChild(document.createTextNode("Ver foto"));
+          bf.appendChild(ver);
+          bf.addEventListener("click", function () {
+            abrirFoto([{ t: "estrella", c: EQUIPOS[eq], dim: fe, src: fe[2],
+              titulo: j.nombre + ", Jugador del Partido",
+              alt: j.nombre + " (" + EQUIPOS[eq] + "), jugador del partido en la fecha " + f.n }], "estrella");
+          });
+          li.appendChild(bf);
+        } else li.appendChild(el("span", "", j.nombre));
+        if (con) {
+          var m = el("span", "marcas"), voz = [];
+          if (j.es) {
+            var marca = el("span", "estrella", "★");
+            marca.appendChild(el("span", "txt", " Jugador del Partido"));
+            m.appendChild(marca); voz.push("Jugador del Partido");
+          }
+          if (j.g) { m.appendChild(el("span", "gol", plural(j.g, "Gol", "goles"))); voz.push(plural(j.g, "1 gol", "goles")); }
+          if (j.ag) { m.appendChild(el("span", "auto", plural(j.ag, "Autogol", "autogoles"))); voz.push(plural(j.ag, "1 autogol", "autogoles")); }
+          for (var k = 0; k < j.am; k++) m.appendChild(el("span", "tarjeta am"));
+          if (j.am) voz.push(plural(j.am, "1 amarilla", "amarillas"));
+          for (k = 0; k < j.ro; k++) m.appendChild(el("span", "tarjeta ro"));
+          if (j.ro) voz.push(plural(j.ro, "1 roja", "rojas"));
+          m.setAttribute("role", "img");
+          m.setAttribute("aria-label", voz.join(", "));
+          m.title = voz.join(", ");
+          li.appendChild(m);
+        }
+        ul.appendChild(li);
+      });
+      sec.appendChild(ul);
+      lados.appendChild(sec);
+    });
+
+    if (ficha.showModal) { if (!ficha.open) ficha.showModal(); }
+    else ficha.setAttribute("open", "");
+    ficha.scrollTop = 0;
+  }
+
+  $("fi-cerrar").addEventListener("click", cerrarFicha);
+  ficha.addEventListener("click", function (e) { if (e.target === ficha) cerrarFicha(); });
+
+  // ---------- Foto de un campeón ----------
+  // Se abre con una lista de campeonatos con foto y el torneo a mostrar; Anterior y Siguiente recorren la lista.
+  var visor = $("foto"), fotoLista = [], fotoPos = 0;
+
+  function cerrarFoto() {
+    if (visor.close) visor.close(); else visor.removeAttribute("open");
+  }
+  function mostrarFoto() {
+    var f = fotoLista[fotoPos], dim = f.dim || FOTOS[f.t];
+    var h = $("fo-titulo");
+    h.textContent = "";
+    if (f.c) h.appendChild(logoDeNombre(f.c));
+    h.appendChild(el("span", "", f.titulo || (f.c + ", campeón " + f.t)));
+
+    var marco = $("fo-marco"), im = el("img");
+    marco.textContent = "";
+    im.width = dim[0]; im.height = dim[1];
+    im.alt = f.alt || ("Plantel de " + f.c + ", campeón " + f.t);
+    im.addEventListener("error", function () {
+      marco.textContent = "";
+      marco.appendChild(el("p", "nota", "No se pudo mostrar esta foto."));
+    });
+    im.src = f.src || rutaFoto(f.t);
+    marco.appendChild(im);
+    $("fo-nota").textContent = f.fotoNota || "";
+    $("fo-nota").hidden = !f.fotoNota;
+
+    $("fo-pie").hidden = fotoLista.length < 2;
+    $("fo-cuenta").textContent = "Foto " + (fotoPos + 1) + " de " + fotoLista.length;
+    $("fo-antes").disabled = fotoPos === 0;
+    $("fo-despues").disabled = fotoPos === fotoLista.length - 1;
+  }
+  function abrirFoto(lista, t) {
+    fotoLista = lista;
+    fotoPos = 0;
+    lista.forEach(function (f, k) { if (f.t === t) fotoPos = k; });
+    mostrarFoto();
+    if (visor.showModal) { if (!visor.open) visor.showModal(); }
+    else visor.setAttribute("open", "");
+    visor.scrollTop = 0;
+  }
+  function pasarFoto(d) {
+    var k = fotoPos + d;
+    if (k < 0 || k >= fotoLista.length) return;
+    fotoPos = k;
+    mostrarFoto();
+  }
+  $("fo-cerrar").addEventListener("click", cerrarFoto);
+  $("fo-antes").addEventListener("click", function () { pasarFoto(-1); });
+  $("fo-despues").addEventListener("click", function () { pasarFoto(1); });
+  visor.addEventListener("click", function (e) { if (e.target === visor) cerrarFoto(); });
+
+  // ---------- Historia: fotos que se amplían en el visor ----------
+  (function () {
+    var figs = Array.prototype.slice.call(document.querySelectorAll(".hist-foto"));
+    var lista = figs.map(function (fig) {
+      var k = fig.getAttribute("data-foto"), f = FOTOS_HISTORIA[k], t = fig.querySelector("figcaption").textContent;
+      return { t: k, dim: f, src: f[2], titulo: t, alt: t };
+    });
+    figs.forEach(function (fig, n) {
+      var im = fig.querySelector("img"), e = lista[n];
+      im.width = e.dim[0]; im.height = e.dim[1];
+      im.src = e.src;
+      fig.querySelector("button").addEventListener("click", function () { abrirFoto(lista, e.t); });
+    });
+  })();
+
+  // ---------- Vista por equipo ----------
+  var ORDEN = EQUIPOS.map(function (_, i) { return i; }).sort(function (a, b) {
+    return EQUIPOS[a].localeCompare(EQUIPOS[b], "es");
+  });
+  var equipo = ORDEN[0];
+  var fichas = {};
+  var orden = { k: 2, asc: false };
+  var ETIQUETA = { g: "Ganó", e: "Empató", p: "Perdió" };
+
+  ORDEN.forEach(function (i) {
+    var li = el("li");
+    var b = el("button");
+    b.type = "button";
+    b.appendChild(logo(i, "chico"));
+    b.appendChild(el("span", "", EQUIPOS[i]));
+    b.addEventListener("click", function () { irEquipo(i); });
+    li.appendChild(b);
+    $("fichas").appendChild(li);
+    fichas[i] = b;
+  });
+
+  function pintarCampana(i) {
+    var ol = $("eq-partidos");
+    ol.textContent = "";
+    var cabLi = el("li", "partido"), cab = el("div", "fila cab");
+    cabLi.setAttribute("aria-hidden", "true");
+    ["Fecha", "Partido", "", "Lugar"].forEach(function (t, k) {
+      cab.appendChild(el("span", k === 3 ? "lugar" : "", t));
+    });
+    cabLi.appendChild(cab);
+    ol.appendChild(cabLi);
+    var ruedaPrevia = 0;
+    campana(i).forEach(function (c) {
+      if (ruedaDe(c.n) !== ruedaPrevia) {
+        ruedaPrevia = ruedaDe(c.n);
+        var sep = el("li", "partido sep");
+        sep.appendChild(cabRueda(c.n));
+        ol.appendChild(sep);
+      }
+      var item = el("li", "partido");
+      var jugado = c.tipo === "jugado";
+      var li = el(jugado ? "button" : "div", "fila");
+      if (jugado) {
+        li.type = "button";
+        li.title = "Ver jugadores, goles y tarjetas";
+        li.addEventListener("click", function () {
+          var f = FECHAS[c.n - 1], g = null;
+          f.p.forEach(function (x) { if (x[2] === c.local && x[3] === c.visita) g = x; });
+          abrirPartido(f, g);
+        });
+      }
+      var meta = el("span");
+      meta.appendChild(el("span", "n", "Fecha " + c.n));
+      meta.appendChild(el("span", "d", c.dia ? fechaMini(c.dia) : "sin fecha"));
+      li.appendChild(meta);
+
+      var cruce = el("span", "cruce");
+      if (c.tipo === "libre") { cruce.className = "cruce vacio"; cruce.textContent = "Libre"; }
+      else if (c.tipo === "sin") { cruce.className = "cruce vacio"; cruce.textContent = "Sin partido programado"; }
+      else {
+        [c.local, c.visita].forEach(function (x, k) {
+          if (k === 1) cruce.appendChild(el("span", "res", c.tipo === "jugado" ? c.gl + " - " + c.gv : "vs."));
+          var nom = el("span", x === i ? "yo" : "otro");
+          nom.appendChild(logo(x, "chico"));
+          nom.appendChild(document.createTextNode(EQUIPOS[x]));
+          cruce.appendChild(nom);
+        });
+        if (c.tipo === "futuro" && c.hora) cruce.appendChild(el("span", "hora", c.hora + " h"));
+      }
+      li.appendChild(cruce);
+
+      if (c.tipo === "jugado") li.appendChild(el("span", "sello " + c.res, ETIQUETA[c.res]));
+      else if (c.tipo === "pendiente") li.appendChild(el("span", "pendiente", "Pendiente"));
+      else if (c.tipo === "futuro") li.appendChild(el("span", "sello e", "Por jugar"));
+      else li.appendChild(el("span"));
+
+      var lugar;
+      if (c.lugar === null) {
+        lugar = el("span", "lugar sinlugar", "–");
+        lugar.setAttribute("aria-label", "Sin lugar todavía: la fecha no se ha jugado");
+      } else {
+        lugar = el("span", "lugar" + (c.lugar === 1 ? " primero" : ""), c.lugar + ".º");
+        lugar.title = "Lugar en la tabla al terminar la fecha " + c.n;
+        lugar.setAttribute("aria-label", "Lugar " + c.lugar + " de la tabla al terminar la fecha");
+      }
+      li.appendChild(lugar);
+      item.appendChild(li);
+      ol.appendChild(item);
+    });
+  }
+
+  // Fotos de las estrellas del partido de un equipo, de la fecha más antigua a la más nueva.
+  function pintarEstrellas(i) {
+    var con = [], sin = [];
+    Object.keys(ESTRELLAS).forEach(function (clave) {
+      var j = JUGADORES[ESTRELLAS[clave]];
+      if (j[0] !== i) return;
+      var c = clave.split(":").map(Number), fe = FOTOS_ESTRELLA[clave];
+      var g = fechaN(c[0]).p.filter(function (x) { return x[2] === c[1] && x[3] === c[2]; })[0];
+      var e = { n: c[0], nombre: j[1], partido: EQUIPOS[c[1]] + " " + g[4] + " - " + g[5] + " " + EQUIPOS[c[2]] };
+      // Goles que convirtió en ese partido, según la planilla
+      var goles = 0;
+      (PLANILLAS[clave] || []).forEach(function (lado) {
+        lado.forEach(function (x) { if (typeof x !== "number" && x[0] === ESTRELLAS[clave]) goles = x[1]; });
+      });
+      e.goles = goles === 0 ? "" : goles === 1 ? "1 gol" : goles + " goles";
+      if (!fe) { sin.push(e); return; }
+      e.t = clave; e.c = EQUIPOS[i]; e.dim = fe; e.src = fe[2];
+      e.titulo = j[1] + ", Jugador del Partido en la fecha " + c[0];
+      e.alt = j[1] + " (" + EQUIPOS[i] + "), jugador del partido en la fecha " + c[0] + ": " + e.partido;
+      con.push(e);
+    });
+    function porFecha(a, b) { return a.n - b.n; }
+    con.sort(porFecha); sin.sort(porFecha);
+
+    var ul = $("eq-estrellas");
+    ul.textContent = "";
+    $("eq-estrellas-caja").hidden = con.length + sin.length === 0;
+    con.forEach(function (e) {
+      var li = el("li"), b = el("button"), im = el("img"), pie = el("span", "pie");
+      b.type = "button";
+      b.setAttribute("aria-label", "Ver la foto de " + e.nombre + ", Jugador del Partido en la fecha " + e.n + ": " + e.partido + (e.goles ? ", " + e.goles : ""));
+      im.alt = "";
+      im.loading = "lazy";
+      im.width = e.dim[0]; im.height = e.dim[1];
+      im.src = e.src;
+      b.appendChild(im);
+      pie.appendChild(el("span", "", e.nombre));
+      pie.appendChild(el("span", "est-fecha", "Fecha " + e.n));
+      pie.appendChild(el("span", "est-partido", e.partido));
+      if (e.goles) pie.appendChild(el("span", "est-goles", e.goles));
+      b.appendChild(pie);
+      b.addEventListener("click", function () { abrirFoto(con, e.t); });
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+    var nota = $("eq-estrellas-nota");
+    nota.hidden = sin.length === 0;
+    nota.textContent = sin.length === 0 ? ""
+      : (sin.length === 1 ? "Falta la foto de " : "Faltan las fotos de ") +
+        enumerar(sin.map(function (e) { return e.nombre + " (fecha " + e.n + ")"; })) + ".";
+  }
+
+  function pintarFotoPlantel(i) {
+    var f = PLANTELES[i], im = $("eq-plantel-img");
+    $("eq-plantel-marco").hidden = !f;
+    $("eq-plantel-nota").hidden = !!f;
+    if (!f) { im.removeAttribute("src"); im.alt = ""; return; }
+    im.width = f[0]; im.height = f[1];
+    im.alt = "Plantel actual de " + EQUIPOS[i] + (f[3] ? " (" + f[3] + ")" : "");
+    $("eq-plantel-pie").textContent = f[3] || "";
+    $("eq-plantel-pie").hidden = !f[3];
+    im.src = f[2];
+  }
+
+  function pintarHistoria(i) {
+    var h = historia(EQUIPOS[i]), caja = $("eq-historia");
+    caja.textContent = "";
+    function bloque(rotulo, cifra, detalle) {
+      var d = el("div");
+      d.appendChild(el("span", "rotulo", rotulo));
+      d.appendChild(el("span", "cifra" + (cifra === 0 ? " cero" : ""), String(cifra)));
+      d.appendChild(el("span", "cuales" + (cifra === 0 ? " vacio" : ""), detalle));
+      caja.appendChild(d);
+    }
+    bloque("Títulos de campeón", h.titulos.length,
+      h.titulos.length ? h.titulos.join(", ") : "Todavía no ha sido campeón");
+    bloque("Subcampeonatos", h.subs.length,
+      h.subs.length ? h.subs.join(", ") : "No ha sido subcampeón");
+
+    // Fotos de sus títulos, de la más antigua a la más nueva
+    var fotos = fotosDe(EQUIPOS[i]), ul = $("eq-fotos");
+    ul.textContent = "";
+    $("eq-fotos-caja").hidden = fotos.length === 0;
+    fotos.forEach(function (f) {
+      var li = el("li"), b = el("button"), im = el("img");
+      b.type = "button";
+      b.setAttribute("aria-label", "Ver la foto del campeón " + f.t);
+      im.alt = "";
+      im.loading = "lazy";
+      im.src = rutaFoto(f.t, true);
+      b.appendChild(im);
+      b.appendChild(el("span", "", f.t));
+      b.addEventListener("click", function () { abrirFoto(fotos, f.t); });
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+    var faltan = h.titulos.filter(function (t) { return !FOTOS[t]; }), nota = $("eq-fotos-nota");
+    nota.hidden = faltan.length === 0;
+    nota.textContent = faltan.length === 0 ? ""
+      : (faltan.length === 1 ? "Falta la foto del título de " : "Faltan las fotos de los títulos de ") + enumerar(faltan) + ".";
+  }
+
+  function pintarPlantel() {
+    var todos = plantel(equipo);
+    var conPartidos = todos.filter(function (j) { return j[2] > 0; });
+    var lista = ($("solo").checked ? conPartidos : todos).slice();
+    var k = orden.k, s = orden.asc ? 1 : -1;
+    lista.sort(function (a, b) {
+      var d = k === 1 ? a[1].localeCompare(b[1], "es") * s : (a[k] - b[k]) * s;
+      return d || (b[2] - a[2]) || (b[3] - a[3]) || a[1].localeCompare(b[1], "es");
+    });
+
+    var tb = $("eq-jugadores");
+    tb.textContent = "";
+    lista.forEach(function (j) {
+      var tr = el("tr");
+      tr.appendChild(el("td", "eq" + (j[2] === 0 ? " sinjugar" : ""), j[1]));
+      [2, 3, 4, 5, 6].forEach(function (c) {
+        tr.appendChild(el("td", (c === 6 ? "fin " : "") + (j[c] === 0 ? "cero" : ""), String(j[c])));
+      });
+      tb.appendChild(tr);
+    });
+    if (!lista.length) {
+      var tr = el("tr"), td = el("td", "eq", "Ningún jugador de este equipo figura en una planilla.");
+      td.colSpan = 6; tr.appendChild(td); tb.appendChild(tr);
+    }
+
+    $("eq-cuenta").textContent = todos.length + " inscritos, " + conPartidos.length + " con partidos jugados";
+
+    Array.prototype.forEach.call(document.querySelectorAll("#plantel .ordenar"), function (b) {
+      var th = b.parentNode, kk = Number(b.getAttribute("data-k"));
+      var base = b.getAttribute("data-t") || b.textContent;
+      b.setAttribute("data-t", base);
+      if (kk === orden.k) {
+        th.setAttribute("aria-sort", orden.asc ? "ascending" : "descending");
+        b.textContent = base + (orden.asc ? " ▲" : " ▼");
+      } else {
+        th.removeAttribute("aria-sort");
+        b.textContent = base;
+      }
+    });
+  }
+
+  function irEquipo(i) {
+    equipo = i;
+    var pos = 0, r = null;
+    FINAL.forEach(function (x, k) { if (x.i === i) { pos = k + 1; r = x; } });
+    $("eq-titulo").textContent = EQUIPOS[i];
+    $("eq-logo").src = LOGOS[i][2];
+    $("eq-resumen").textContent =
+      pos + ".º de la tabla con " + r.pts + (r.pts === 1 ? " punto" : " puntos") + ". Jugó " + r.pj +
+      (r.pj === 1 ? " partido" : " partidos") + ": ganó " + r.pg + ", empató " + r.pe + " y perdió " + r.pp +
+      ". Goles: " + r.gf + " a favor y " + r.gc + " en contra. Fair Play: " + r.fp + ".";
+    ORDEN.forEach(function (x) {
+      if (x === i) fichas[x].setAttribute("aria-current", "true");
+      else fichas[x].removeAttribute("aria-current");
+    });
+    pintarFotoPlantel(i);
+    pintarHistoria(i);
+    pintarCampana(i);
+    pintarPlantel();
+    pintarEstrellas(i);
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("#plantel .ordenar"), function (b) {
+    b.addEventListener("click", function () {
+      var k = Number(b.getAttribute("data-k"));
+      if (orden.k === k) orden.asc = !orden.asc;
+      else orden = { k: k, asc: k === 1 };
+      pintarPlantel();
+    });
+  });
+  $("solo").addEventListener("change", pintarPlantel);
+
+  // ---------- Goleadores y tarjetas ----------
+  var CORTE = 15;
+  // Con "minimo", se muestran por defecto solo los que tienen al menos ese valor.
+  function montarRanking(k, idCuerpo, idBoton, plural, minimo) {
+    var lista = ranking(k), abierto = false;
+    var corte = Math.min(CORTE, lista.length);
+    if (minimo) corte = lista.filter(function (x) { return x.j[k] >= minimo; }).length;
+    else {
+    while (corte < lista.length && lista[corte].j[k] === lista[corte - 1].j[k]) corte++;
+    // Si el empate alarga demasiado la lista, se corta antes del grupo empatado.
+    if (corte > CORTE + 10) {
+      var antes = CORTE;
+      while (antes > 0 && lista[antes - 1].j[k] === lista[CORTE - 1].j[k]) antes--;
+      if (antes >= 3) corte = antes;
+    }
+    }
+    var boton = $(idBoton), tb = $(idCuerpo);
+
+    function pintar() {
+      tb.textContent = "";
+      lista.slice(0, abierto ? lista.length : corte).forEach(function (x) {
+        var tr = el("tr");
+        if (x.pos === 1) tr.className = "lider";
+        tr.appendChild(el("td", "pos", String(x.pos)));
+        var td = el("td", "eq", x.j[1]);
+        td.appendChild(el("small", "", EQUIPOS[x.j[0]]));
+        tr.appendChild(td);
+        tr.appendChild(el("td", "", String(x.j[2])));
+        var valor = el("td", "pts", String(x.j[k]));
+        if (k === 4) {
+          // Suspensión por juntar 4 amarillas: asterisco si ya se cumplió, aviso si falta cumplirla.
+          var susp = DISCIPLINA[JUGADORES.indexOf(x.j)].susp;
+          var falta = susp.filter(function (su) { return su.cumplida === null; });
+          if (falta.length) {
+            td.appendChild(el("small", "castigo", "Suspendido: debe cumplir 1 partido"));
+          } else if (susp.length) {
+            var ast = el("span", "ast", "*");
+            ast.title = "Suspensión por 4 amarillas cumplida en la fecha " + susp[susp.length - 1].cumplida;
+            ast.setAttribute("aria-label", ", suspensión cumplida en la fecha " + susp[susp.length - 1].cumplida);
+            valor.appendChild(ast);
+          }
+        }
+        tr.appendChild(valor);
+        tb.appendChild(tr);
+      });
+      if (lista.length <= corte) { boton.hidden = true; return; }
+      boton.textContent = abierto ? (minimo ? "Ver solo los de " + minimo + " o más" : "Ver solo los primeros " + corte) : "Ver los " + lista.length + " " + plural;
+    }
+    boton.addEventListener("click", function () { abierto = !abierto; pintar(); });
+    pintar();
+    return lista;
+  }
+
+  // Suspendidos, en el orden de la tabla de la liga
+  SANCIONES.forEach(function (x) {
+    var j = JUGADORES[x[0]], tr = el("tr");
+    var td = el("td", "eq"), d = el("div", "con-logo"), txt = el("span", "", j[1]);
+    txt.appendChild(el("small", "", EQUIPOS[j[0]]));
+    d.appendChild(logo(j[0], "chico")); d.appendChild(txt); td.appendChild(d);
+    tr.appendChild(td);
+    tr.appendChild(el("td", "eq detalle", x[1]));
+    tr.appendChild(el("td", "fin sancion", x[2]));
+    $("li-sanciones").appendChild(tr);
+  });
+
+  var goleadores = montarRanking(3, "li-goles", "mas-goles", "goleadores", 2);
+  var amonestados = montarRanking(4, "li-amarillas", "mas-amarillas", "jugadores con amarilla");
+  var estrellas = montarRanking(6, "li-estrellas", "mas-estrellas", "jugadores elegidos");
+  function suma(k) { return JUGADORES.reduce(function (s, j) { return s + j[k]; }, 0); }
+  var golesTorneo = FINAL.reduce(function (s, r) { return s + r.gf; }, 0);
+  var autogoles = golesTorneo - suma(3);
+  $("li-resumen").textContent =
+    "Tras " + ULTIMA + " fechas: " + suma(3) + " goles repartidos entre " + goleadores.length + " jugadores, " +
+    suma(4) + " amarillas a " + amonestados.length + " jugadores y " + suma(5) + " expulsiones. " +
+    "El Jugador del Partido se eligió " + suma(6) + " veces, entre " + estrellas.length + " jugadores.";
+  $("nota-goles").textContent = autogoles > 0
+    ? "No se cuentan los " + autogoles + " autogoles del torneo, que suman para el equipo pero no para un goleador."
+    : "";
+
+  // ---------- Fair Play ----------
+  (function () {
+    var lista = FINAL.slice().sort(function (a, b) {
+      return (b.fp - a.fp) || a.nombre.localeCompare(b.nombre, "es");
+    });
+    var tb = $("fa-cuerpo"), pos = 0, empatados = [];
+    lista.forEach(function (r, k) {
+      if (k === 0 || r.fp !== lista[k - 1].fp) pos = k + 1;
+      else {
+        if (empatados.indexOf(lista[k - 1].nombre) < 0) empatados.push(lista[k - 1].nombre);
+        empatados.push(r.nombre);
+      }
+      var tr = el("tr", pos === 1 ? "lider" : "");
+      tr.appendChild(el("td", "pos", String(pos)));
+      var td = el("td", "eq");
+      td.appendChild(enlaceEquipo(r.i));
+      tr.appendChild(td);
+      tr.appendChild(el("td", "", String(r.pj)));
+      tr.appendChild(el("td", r.ta === 0 ? "cero" : "", String(r.ta)));
+      tr.appendChild(el("td", r.tr === 0 ? "cero" : "", String(r.tr)));
+      tr.appendChild(el("td", "pts", String(r.fp)));
+      tb.appendChild(tr);
+    });
+    $("fa-resumen").textContent =
+      "Acumulado tras " + ULTIMA + " fechas. Cada amarilla descuenta 1 punto y cada roja 4; " +
+      "una doble amarilla cuenta solo como roja. Va primero el equipo con menos descuentos.";
+    $("fa-empates").textContent = empatados.length
+      ? "Los equipos con el mismo puntaje comparten lugar."
+      : "";
+    $("fa-empates").hidden = !empatados.length;
+  })();
+
+  // ---------- Simulador ----------
+  // Trabaja con una copia: pasa los resultados escritos como partidos "extra" a tablaHasta,
+  // así la tabla real y el resto de la aplicación no cambian.
+  (function () {
+    var CLAVE = "lifexi-junior-simulador";
+    var campos = [];      // partidos que faltan: { n, local, visita, a, b, caja, clave }
+    var filasSim = {};
+    var lugarReal = {};
+    FINAL.forEach(function (r, k) { lugarReal[r.i] = k + 1; });
+
+    var guardado = {};
+    try { guardado = JSON.parse(window.localStorage.getItem(CLAVE) || "{}") || {}; } catch (e) { guardado = {}; }
+
+    function entrada(valor) {
+      var inp = el("input");
+      inp.type = "number"; inp.min = "0"; inp.max = "99"; inp.step = "1";
+      inp.setAttribute("inputmode", "numeric");
+      if (valor !== undefined && valor !== null) inp.value = valor;
+      inp.addEventListener("focus", function () { inp.select(); });
+      return inp;
+    }
+    function goles(inp) {
+      var v = inp.value.trim();
+      if (!/^[0-9]{1,2}$/.test(v)) return null;
+      return parseInt(v, 10);
+    }
+    // Al escribir los goles de un equipo, el otro parte en 0 si su casilla está vacía.
+    function enlazar(a, b) {
+      [[a, b], [b, a]].forEach(function (par) {
+        par[0].addEventListener("input", function () {
+          if (goles(par[0]) !== null && par[1].value === "") par[1].value = "0";
+          calcular();
+        });
+      });
+    }
+    function marcador(a, b) {
+      var cajas = el("span", "cajas");
+      cajas.appendChild(a); cajas.appendChild(el("span", "", "-")); cajas.appendChild(b);
+      return cajas;
+    }
+
+    // --- Partidos que faltan
+    var ruedaSim = 0;
+    FALTAN.forEach(function (f) {
+      if (ruedaDe(f.n) !== ruedaSim) {
+        ruedaSim = ruedaDe(f.n);
+        var cab = cabRueda(f.n);
+        cab.classList.add("sim-rueda");
+        $("sim-partidos").appendChild(cab);
+      }
+      var sec = el("div", "sim-fecha");
+      var h = el("h3", "", "Fecha " + f.n);
+      h.appendChild(el("small", "", f.dia ? fechaLarga(f.dia) : "Partido pendiente, sin día asignado"));
+      sec.appendChild(h);
+      var panel = el("div", "panel"), ul = el("ul", "partidos");
+      f.p.forEach(function (g) {
+        var li = el("li", "partido"), caja = el("div", "sim");
+        var clave = f.n + ":" + g[1] + ":" + g[2], previo = guardado[clave] || [];
+        var a = entrada(previo[0]), b = entrada(previo[1]);
+        a.setAttribute("aria-label", "Goles de " + EQUIPOS[g[1]]);
+        b.setAttribute("aria-label", "Goles de " + EQUIPOS[g[2]]);
+        enlazar(a, b);
+        caja.appendChild(el("span", "equipo local", EQUIPOS[g[1]]));
+        caja.appendChild(marcador(a, b));
+        caja.appendChild(el("span", "equipo visita", EQUIPOS[g[2]]));
+        li.appendChild(caja); ul.appendChild(li);
+        campos.push({ n: f.n, local: g[1], visita: g[2], a: a, b: b, caja: caja, clave: clave });
+      });
+      panel.appendChild(ul); sec.appendChild(panel);
+      $("sim-partidos").appendChild(sec);
+    });
+
+    EQUIPOS.forEach(function (nombre, i) {
+      var tr = el("tr");
+      ["pos", "mov", "eq", "", "", "", "", "", "", "", "", "pts"].forEach(function (c) { tr.appendChild(el("td", c)); });
+      tr.children[2].textContent = nombre;
+      filasSim[i] = tr;
+    });
+
+    // --- Copa de Oro: 1.º contra 4.º y 2.º contra 3.º, y final entre los ganadores.
+    // Cada llave guarda sus dos equipos (o null si aún no se sabe), el marcador y,
+    // si hay empate, quién avanza por penales (0 el primero, 1 el segundo).
+    function crearLlave(clave, titulo, detalle, destino) {
+      var previo = guardado[clave] || [];
+      var m = { clave: clave, eq: [null, null], pen: previo[2] === 0 || previo[2] === 1 ? previo[2] : null };
+      var sec = el("div", "sim-fecha");
+      var h = el("h3", "", titulo);
+      h.appendChild(el("small", "", detalle));
+      sec.appendChild(h);
+      var panel = el("div", "panel recorta");
+      m.caja = el("div", "sim");
+      m.nombres = [el("span", "equipo local"), el("span", "equipo visita")];
+      m.a = entrada(previo[0]); m.b = entrada(previo[1]);
+      enlazar(m.a, m.b);
+      m.caja.appendChild(m.nombres[0]);
+      m.caja.appendChild(marcador(m.a, m.b));
+      m.caja.appendChild(m.nombres[1]);
+      panel.appendChild(m.caja);
+      m.penales = el("div", "penales");
+      m.penales.appendChild(el("span", "", "Empate. ¿Quién avanza?"));
+      m.botones = [0, 1].map(function (k) {
+        var b = el("button", "paso mini");
+        b.type = "button";
+        b.addEventListener("click", function () { m.pen = k; calcular(); });
+        m.penales.appendChild(b);
+        return b;
+      });
+      panel.appendChild(m.penales);
+      sec.appendChild(panel);
+      $(destino).appendChild(sec);
+      return m;
+    }
+    // Muestra los equipos de una llave. "previos" es el texto de cada lado: el lugar en la tabla
+    // en las semifinales, o de qué semifinal viene cuando el finalista aún no se conoce.
+    function ponerEquipos(m, eq, previos) {
+      m.eq = eq;
+      [0, 1].forEach(function (k) {
+        var n = m.nombres[k];
+        n.textContent = "";
+        n.classList.toggle("pordefinir", eq[k] === null);
+        if (eq[k] === null) n.textContent = previos[k];
+        else {
+          if (previos[k]) n.appendChild(el("span", "semilla", previos[k]));
+          n.appendChild(document.createTextNode(EQUIPOS[eq[k]]));
+        }
+        var inp = k === 0 ? m.a : m.b;
+        inp.setAttribute("aria-label", "Goles de " + (eq[k] === null ? previos[k] : EQUIPOS[eq[k]]));
+      });
+      var listos = eq[0] !== null && eq[1] !== null;
+      m.a.disabled = !listos; m.b.disabled = !listos;
+      var ga = goles(m.a), gb = goles(m.b);
+      var empate = listos && ga !== null && gb !== null && ga === gb;
+      if (!empate) m.pen = null;
+      m.penales.hidden = !empate;
+      m.caja.classList.toggle("listo", listos && ga !== null && gb !== null);
+      if (empate) m.botones.forEach(function (b, k) {
+        b.textContent = EQUIPOS[eq[k]];
+        b.setAttribute("aria-pressed", m.pen === k ? "true" : "false");
+      });
+      var g = ganador(m);
+      [0, 1].forEach(function (k) { m.nombres[k].classList.toggle("avanza", g === k); });
+    }
+    // Lado que gana la llave (0 o 1), o null si aún no está definido.
+    function ganador(m) {
+      if (m.eq[0] === null || m.eq[1] === null) return null;
+      var ga = goles(m.a), gb = goles(m.b);
+      if (ga === null || gb === null) return null;
+      if (ga > gb) return 0;
+      if (gb > ga) return 1;
+      return m.pen;
+    }
+
+    var semi1 = crearLlave("copa:semi1", "Semifinal 1", "1.º contra 4.º", "copa-semis");
+    var semi2 = crearLlave("copa:semi2", "Semifinal 2", "2.º contra 3.º", "copa-semis");
+    var final = crearLlave("copa:final", "Final", "Ganadores de las semifinales", "copa-final");
+    var llaves = [semi1, semi2, final];
+    var campeon = el("div", "campeon");
+    campeon.appendChild(el("span", "", "Campeón de la Copa de Oro"));
+    var campeonNombre = el("strong", "", "Por definir");
+    campeon.appendChild(campeonNombre);
+    campeon.setAttribute("aria-live", "polite");
+    $("copa-final").appendChild(campeon);
+
+    function calcular() {
+      var extra = [];
+      campos.forEach(function (c) {
+        var ga = goles(c.a), gb = goles(c.b);
+        var listo = ga !== null && gb !== null;
+        c.caja.classList.toggle("listo", listo);
+        if (listo) extra.push({ n: c.n, g: [null, "", c.local, c.visita, ga, gb] });
+      });
+
+      var t = tablaHasta(ULTIMA, extra), cuerpo = $("sim-cuerpo");
+      var arriba = {};
+      if (!quieto) t.forEach(function (r) {
+        var tr = filasSim[r.i];
+        if (tr.parentNode) arriba[r.i] = tr.getBoundingClientRect().top;
+      });
+      t.forEach(function (r, k) {
+        var tr = filasSim[r.i], c = tr.children, p = k + 1, dif = lugarReal[r.i] - p;
+        tr.className = p === 1 ? "lider" : "";
+        c[0].textContent = p;
+        c[1].className = "mov " + (dif > 0 ? "sube" : dif < 0 ? "baja" : "igual");
+        c[1].textContent = dif > 0 ? "▲" + dif : dif < 0 ? "▼" + (-dif) : "=";
+        c[1].setAttribute("aria-label", dif > 0 ? "Sube " + dif + " respecto de la tabla real"
+          : dif < 0 ? "Baja " + (-dif) + " respecto de la tabla real" : "Igual que en la tabla real");
+        c[3].textContent = r.pj; c[4].textContent = r.pg; c[5].textContent = r.pe; c[6].textContent = r.pp;
+        c[7].textContent = r.gf; c[8].textContent = r.gc; c[9].textContent = signo(r.dg);
+        c[10].textContent = r.fp; c[11].textContent = r.pts;
+        cuerpo.appendChild(tr);
+      });
+      if (!quieto) t.forEach(function (r) {
+        var tr = filasSim[r.i];
+        if (arriba[r.i] === undefined || !tr.animate) return;
+        var dy = arriba[r.i] - tr.getBoundingClientRect().top;
+        if (Math.abs(dy) < 1) return;
+        tr.animate([{ transform: "translateY(" + dy + "px)" }, { transform: "translateY(0)" }],
+          { duration: 380, easing: "cubic-bezier(.2,.7,.2,1)" });
+      });
+
+      $("sim-cuenta").textContent = extra.length === 0
+        ? "Sin resultados escritos: es igual a la tabla real"
+        : extra.length + " de " + campos.length + (extra.length === 1 ? " partido simulado" : " partidos simulados");
+
+      var notas = $("sim-notas");
+      notas.textContent = "";
+      var sorteos = {};
+      t.forEach(function (r) { if (r.sorteo) (sorteos[r.sorteo] = sorteos[r.sorteo] || []).push(r.nombre); });
+      Object.keys(sorteos).forEach(function (m) {
+        var e = sorteos[m];
+        notas.appendChild(el("p", "nota", e.slice(0, -1).join(", ") + " y " + e[e.length - 1] +
+          " quedarían igualados en todos los criterios de desempate. Su orden se definiría por sorteo; aquí van en orden alfabético."));
+      });
+      notas.appendChild(el("p", "nota",
+        "Parte de la tabla real a la fecha " + ULTIMA + " y suma solo los partidos con los dos marcadores escritos. La flecha compara con el lugar real de hoy."));
+      notas.appendChild(el("p", "nota",
+        "Usa los mismos criterios de desempate. El Fair Play no cambia, porque los partidos simulados no tienen tarjetas."));
+
+      // Copa de Oro con los cuatro primeros de la tabla simulada
+      ponerEquipos(semi1, [t[0].i, t[3].i], ["1.º", "4.º"]);
+      ponerEquipos(semi2, [t[1].i, t[2].i], ["2.º", "3.º"]);
+      var g1 = ganador(semi1), g2 = ganador(semi2);
+      var f1 = g1 === null ? null : semi1.eq[g1], f2 = g2 === null ? null : semi2.eq[g2];
+      ponerEquipos(final, [f1, f2],
+        [f1 === null ? "Ganador de la semifinal 1" : "", f2 === null ? "Ganador de la semifinal 2" : ""]);
+      var gf = ganador(final);
+      campeon.classList.toggle("definido", gf !== null);
+      campeonNombre.textContent = gf === null ? "Por definir" : EQUIPOS[final.eq[gf]];
+
+      // Guardar lo escrito en este navegador
+      var guardar = {};
+      campos.forEach(function (c) {
+        if (c.a.value !== "" || c.b.value !== "") guardar[c.clave] = [c.a.value, c.b.value];
+      });
+      llaves.forEach(function (m) {
+        if (m.a.value !== "" || m.b.value !== "") guardar[m.clave] = [m.a.value, m.b.value, m.pen];
+      });
+      try { window.localStorage.setItem(CLAVE, JSON.stringify(guardar)); } catch (e) {}
+      $("sim-borrar").disabled = Object.keys(guardar).length === 0;
+    }
+
+    $("sim-borrar").addEventListener("click", function () {
+      campos.forEach(function (c) { c.a.value = ""; c.b.value = ""; });
+      llaves.forEach(function (m) { m.a.value = ""; m.b.value = ""; m.pen = null; });
+      calcular();
+    });
+    calcular();
+  })();
+
+  // ---------- Campeones ----------
+  (function () {
+    // Logo por nombre: primero los equipos del torneo actual, luego los históricos; si no hay, una inicial.
+    function logoNombre(nombre) {
+      var i = EQUIPOS.indexOf(nombre);
+      if (i >= 0) return logo(i, "chico");
+      var h = LOGOS_HIST[nombre];
+      if (h) {
+        var im = el("img", "logo chico");
+        im.src = h[2];
+        im.alt = ""; im.width = h[0]; im.height = h[1];
+        return im;
+      }
+      var s = el("span", "logo chico sin", nombre.charAt(0));
+      s.setAttribute("aria-hidden", "true");
+      return s;
+    }
+    function equipo(nombre) {
+      var d = el("div", "con-logo");
+      d.appendChild(logoNombre(nombre));
+      d.appendChild(el("span", "", nombre));
+      return d;
+    }
+
+    // Títulos por equipo
+    var lista = palmares(), tb = $("ca-titulos");
+    lista.forEach(function (r) {
+      var tr = el("tr", r.pos === 1 ? "lider" : "");
+      tr.appendChild(el("td", "pos", String(r.pos)));
+      var td = el("td", "eq"), d = el("div", "con-logo"), txt = el("span", "", r.nombre);
+      if (r.disuelto) txt.appendChild(el("small", "disuelto", "Equipo disuelto"));
+      d.appendChild(logoNombre(r.nombre)); d.appendChild(txt);
+      td.appendChild(d); tr.appendChild(td);
+      tr.appendChild(el("td", "titulos", String(r.titulos)));
+      tr.appendChild(el("td", r.subs === 0 ? "cero" : "", String(r.subs)));
+      tr.appendChild(el("td", "fin", r.ultimo));
+      tb.appendChild(tr);
+    });
+
+    var oficiales = CAMPEONES.filter(function (f) { return f.c; });
+    var enCurso = CAMPEONES.filter(function (f) { return f.tipo === "encurso"; })[0];
+    $("ca-resumen").textContent =
+      "Desde " + oficiales[0].t + " se han definido " + oficiales.length + " campeonatos oficiales, ganados por " +
+      lista.length + " equipos distintos. " + lista[0].nombre + " es el más ganador, con " + lista[0].titulos + " títulos." +
+      (enCurso ? " El torneo " + enCurso.t + " es el número " + enCurso.n + "." : "");
+
+    // Los tres primeros lugares de cada estadística de finales (con los empatados que haya)
+    var tf = $("ca-finalistas");
+    finalistas().filter(function (r) { return r.pos <= 3; }).forEach(function (r) {
+      var tr = el("tr", r.pos === 1 ? "lider" : "");
+      tr.appendChild(el("td", "pos", String(r.pos)));
+      var td = el("td", "eq"); td.appendChild(equipo(r.nombre)); tr.appendChild(td);
+      tr.appendChild(el("td", "titulos", String(r.jugadas)));
+      tr.appendChild(el("td", "", String(r.ganadas)));
+      tr.appendChild(el("td", "fin", String(r.perdidas)));
+      tf.appendChild(tr);
+    });
+
+    var trp = $("ca-repetidas");
+    var repetidas = finalesRepetidas().filter(function (r) { return r.pos <= 3; });
+    repetidas.forEach(function (r) {
+      var tr = el("tr", r.pos === 1 ? "lider" : "");
+      tr.appendChild(el("td", "pos", String(r.pos)));
+      var td = el("td", "eq");
+      td.appendChild(equipo(r.a));
+      td.appendChild(equipo(r.b));
+      r.juegos.forEach(function (j) {
+        var txt;
+        if (j.cancha === j.c) txt = j.t + ": ganó " + j.c + ".";
+        else if (j.cancha === "empate") {
+          txt = j.t + ": empate en cancha y en penales. Resolución final: título para " + j.c +
+            ", por expulsiones de " + j.rival + " que impidieron continuar los penales.";
+        } else {
+          txt = j.t + ": en cancha ganó " + j.cancha + ". Resolución final: título para " + j.c +
+            ", por descalificación de " + j.cancha + ".";
+        }
+        td.appendChild(el("small", "", txt));
+      });
+      tr.appendChild(td);
+      tr.appendChild(el("td", "pts", String(r.veces)));
+      trp.appendChild(tr);
+    });
+
+    // Fotos que recorre el visor del historial: las de los campeones y la de la Copa COVID (no oficial)
+    function listaFotos() {
+      return CAMPEONES.filter(function (x) { return FOTOS[x.t] && (x.c || x.ganador); }).map(function (x) {
+        return x.c ? x : { t: x.t, c: x.ganador, titulo: x.ganador + ", ganador de la Copa COVID " + x.t.slice(0, 4) + " (no oficial)" };
+      });
+    }
+
+    // Historial
+    var recientes = false, cuerpo = $("ca-filas"), boton = $("ca-orden");
+    function pintar() {
+      cuerpo.textContent = "";
+      var filas = recientes ? CAMPEONES.slice().reverse() : CAMPEONES;
+      filas.forEach(function (f) {
+        var tr = el("tr", f.nota ? "con-nota" : "");
+        tr.appendChild(el("td", "pos", f.n === null ? "" : String(f.n)));
+        var t = el("td", "torneo", f.t);
+        if (f.lugar) t.appendChild(el("small", "", f.lugar));
+        tr.appendChild(t);
+        if (f.tipo === "oficial") {
+          var c = el("td", "eq ganador");
+          if (FOTOS[f.t]) {
+            var b = el("button", "con-logo verfoto");
+            b.type = "button";
+            b.title = "Ver la foto del campeón";
+            b.setAttribute("aria-label", f.c + ". Ver la foto del campeón " + f.t);
+            b.appendChild(logoNombre(f.c));
+            var txt = el("span", "txt"), ver = el("span", "ver");
+            txt.appendChild(el("span", "nombre", f.c));
+            ver.appendChild(iconoFoto());
+            ver.appendChild(document.createTextNode("Ver foto"));
+            txt.appendChild(ver);
+            b.appendChild(txt);
+            b.addEventListener("click", function () { abrirFoto(listaFotos(), f.t); });
+            c.appendChild(b);
+          } else c.appendChild(equipo(f.c));
+          tr.appendChild(c);
+          var s = el("td", "eq fin");
+          if (f.s || f.dq) {
+            var d = equipo(f.s || f.dq);
+            if (f.ast) d.lastChild.textContent += " *";
+            s.appendChild(d);
+          } else {
+            s.className = "eq fin aparte";
+            s.textContent = f.ast ? "Sin subcampeón *" : "";
+          }
+          tr.appendChild(s);
+        } else if (f.ganador && FOTOS[f.t]) {
+          // Torneo no oficial con foto: el mismo texto de siempre, con "Ver foto" debajo
+          var g = el("td", "eq fin aparte");
+          g.colSpan = 2;
+          var bg = el("button", "verfoto");
+          bg.type = "button";
+          bg.title = "Ver la foto";
+          bg.setAttribute("aria-label", "Copa COVID, no oficial. Ver la foto del ganador");
+          var tg = el("span", "txt"), vg = el("span", "ver");
+          tg.appendChild(el("span", "", "Copa COVID, no oficial"));
+          vg.appendChild(iconoFoto());
+          vg.appendChild(document.createTextNode("Ver foto"));
+          tg.appendChild(vg);
+          bg.appendChild(tg);
+          bg.addEventListener("click", function () { abrirFoto(listaFotos(), f.t); });
+          g.appendChild(bg);
+          tr.appendChild(g);
+        } else {
+          var a = el("td", "eq fin aparte",
+            f.tipo === "suspendido" ? "Suspendido por la pandemia"
+            : f.tipo === "nooficial" ? "Copa COVID, no oficial"
+            : "En juego");
+          a.colSpan = 2;
+          tr.appendChild(a);
+        }
+        cuerpo.appendChild(tr);
+        if (f.nota) {
+          var dt = el("tr", "detalle");
+          dt.appendChild(el("td"));
+          var n = el("td", "fin", f.nota);
+          n.colSpan = 3;
+          dt.appendChild(n);
+          cuerpo.appendChild(dt);
+        }
+      });
+      boton.textContent = recientes ? "Ver desde el primero" : "Ver primero los más recientes";
+    }
+    boton.addEventListener("click", function () { recientes = !recientes; pintar(); });
+    pintar();
+    $("ca-fotos-nota").textContent =
+      "Toca un campeón que diga «Ver foto» para ver la foto del plantel. Hay foto de " +
+      fotosDe().length + " de los " + oficiales.length + " campeonatos.";
+  })();
+
+  // ---------- Teclado ----------
+  document.addEventListener("keydown", function (e) {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    var t = e.target && e.target.tagName;
+    if (t === "INPUT" || t === "SELECT" || t === "TEXTAREA") return;
+    if (visor.open) {
+      var d = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+      if (d) { pasarFoto(d); e.preventDefault(); }
+      return;
+    }
+    if (ficha.open) return;
+    var paso = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+    if (!paso) return;
+    if (vista === "fecha") { ir(actual + paso); e.preventDefault(); }
+    else if (vista === "equipo") {
+      var k = ORDEN.indexOf(equipo) + paso;
+      if (k >= 0 && k < ORDEN.length) irEquipo(ORDEN[k]);
+      e.preventDefault();
+    }
+  });
+
+  ir(ULTIMA);   // al abrir, la última fecha con resultados
+  irEquipo(equipo);
+})();
+</script>
+
+<p class="visitas" id="visitas" hidden></p>
+<style>
+  .visitas { max-width: 68rem; margin: 0 auto; padding: 0 1.25rem 2rem; color: var(--muted); font-size: 0.9rem; }
+  .visitas strong { color: var(--ink); font-weight: 600; }
+</style>
+<script data-goatcounter="https://lifexi.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+<script>
+  // Total de visitas del sitio. GoatCounter actualiza esta cifra cada algunas horas.
+  (function () {
+    var r = new XMLHttpRequest();
+    r.open("GET", "https://lifexi.goatcounter.com/counter/TOTAL.json");
+    r.onload = function () {
+      if (r.status !== 200) return;
+      try {
+        var n = JSON.parse(r.responseText).count;
+        var p = document.getElementById("visitas");
+        p.textContent = "Visitas al sitio: ";
+        var b = document.createElement("strong"); b.textContent = n; p.appendChild(b);
+        p.hidden = false;
+      } catch (e) {}
+    };
+    r.send();
+  })();
+</script>
+</body>
+</html>
