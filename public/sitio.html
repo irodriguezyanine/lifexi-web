@@ -98,6 +98,14 @@
   /* Encabezado y vistas */
   .marca { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.9rem; }
   .logo-liga { width: 4.5rem; height: 4.5rem; flex-shrink: 0; }
+  a.logo-home {
+    display: block;
+    flex-shrink: 0;
+    line-height: 0;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 50%;
+  }
   .marca-txt { min-width: 0; }
   .marca-nombre {
     margin: 0;
@@ -1102,7 +1110,9 @@
 <div class="wrap">
 
   <div class="marca">
-    <img class="logo-liga" width="192" height="192" alt="Logo de LIFEXI" src="img/logo-lifexi.png">
+    <a class="logo-home" id="ir-home" href="/" title="Inicio" aria-label="Inicio">
+      <img class="logo-liga" width="192" height="192" alt="" src="img/logo-lifexi.png">
+    </a>
     <div class="marca-txt">
       <p class="marca-nombre">LIFEXI</p>
       <p class="liga">Junior · Torneo Apertura 2026</p>
@@ -3979,6 +3989,15 @@ if (typeof document !== "undefined") (function () {
 
   ir(ULTIMA);   // al abrir, la última fecha con resultados
   irEquipo(equipo);
+
+  $("ir-home").addEventListener("click", function (e) {
+    e.preventDefault();
+    if (ficha.open) cerrarFicha();
+    if (visor.open) cerrarFoto();
+    verVista("fecha");
+    ir(ULTIMA);
+    window.scrollTo(0, 0);
+  });
 })();
 </script>
 
